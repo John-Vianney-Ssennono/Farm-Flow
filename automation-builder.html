@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Document Metadata & Responsive Viewport -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Page Title: Visual Low-Code Workflow Engine for Water Quantity Optimization -->
+  <title>Farm-Flow — Visual Low-Code Workflow Engine (Zapier for Ag)</title>
+  <meta name="description" content="Visual drag-and-drop workflow builder simulating real farm equipment reacting to water data changes in Cleveland County, Oklahoma.">
+  
+  <!-- Hydrology Blue Stylesheet for Node Graph Builder -->
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Cyan Water Droplet Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+</head>
+<body>
+
+  <!-- =========================================================================
+       HEADER BAR: BRANDING, TEMPLATE SELECTOR & EXECUTION CONTROLS
+       ========================================================================= -->
+  <header class="app-header">
+    <div class="brand-section">
+      <!-- Water Droplet Logo in Gradient Blue -->
+      <div class="brand-logo-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          <path d="M12 9v4"/>
+          <path d="M12 17h.01"/>
+        </svg>
+      </div>
+      <div class="brand-titles">
+        <div class="brand-title">
+          FARM-FLOW
+          <span class="brand-badge">Water Engine</span>
+        </div>
+        <div class="brand-subtitle">Smart Water Quantity &amp; Hardware Orchestration — Cleveland County, OK</div>
+      </div>
+    </div>
+
+    <!-- Center Template Selector -->
+    <div class="header-center">
+      <div class="template-picker-box">
+        <span class="template-label">Workflow:</span>
+        <select id="template-select" class="header-select">
+          <!-- Populated dynamically via JavaScript -->
+        </select>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <!-- Link back to the React Mobile Swift HIG App -->
+      <a href="index.html" class="btn btn-secondary btn-sm" style="text-decoration: none; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+        📱 Switch to Swift React App
+      </a>
+
+      <!-- Run Step Execution Button -->
+      <button class="btn btn-success" id="btn-run-workflow" title="Execute graph top-down">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Run Workflow
+      </button>
+
+      <!-- Live Continuous Simulation Loop Toggle -->
+      <button class="btn btn-secondary" id="btn-toggle-continuous" title="Automated live sensor evaluation loop">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Live Loop: OFF
+      </button>
+
+      <!-- Export Graph JSON -->
+      <button class="btn btn-secondary btn-sm" id="btn-export-json" title="Save graph to JSON">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        Export
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       ACTIVE TEMPLATE BANNER (EXPLAINS CURRENTLY LOADED LOGIC GRAPH)
+       ========================================================================= -->
+  <div class="template-info-banner" id="active-template-banner">
+    <span class="template-pill">Hackathon Scenario</span>
+    <span><strong>1. KETOS Salinity Flush:</strong> IF KETOS detects salinity &gt; 2.0 mS/cm, THEN trigger WiseConn Valve 4 for 20 min, AND log water volume to Google Sheets.</span>
+  </div>
+
+  <!-- =========================================================================
+       MAIN WORKSPACE: SIDEBAR, FLOW CANVAS, AND HARDWARE RACK
+       ========================================================================= -->
+  <main class="app-workspace">
+
+    <!-- LEFT SIDEBAR: DRAGGABLE COMPONENT LIBRARY -->
+    <aside class="sidebar-library">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <span>Component Library</span>
+          <span style="font-size: 11px; color: var(--water-cyan);">16 Nodes</span>
+        </div>
+        <div class="sidebar-hint">Drag any sensor, soil profile, or valve onto the canvas</div>
+      </div>
+      <div class="sidebar-content" id="sidebar-component-list">
+        <!-- Injected via JavaScript -->
+      </div>
+    </aside>
+
+    <!-- CENTER: SVG FLOW CANVAS (PAN & ZOOM VIEWPORT) -->
+    <section class="canvas-area" id="flow-canvas-container">
+      <!-- Floating Canvas Controls -->
+      <div class="canvas-floating-controls">
+        <button class="floating-btn" id="btn-zoom-in" title="Zoom In">+</button>
+        <span class="zoom-level" id="zoom-percentage">100%</span>
+        <button class="floating-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+        <button class="floating-btn" id="btn-zoom-fit" title="Reset Canvas View" style="font-size: 10px;">FIT</button>
+        <button class="floating-btn" id="btn-clear-canvas" title="Clear Canvas" style="color: #f87171;">✕</button>
+      </div>
+    </section>
+
+    <!-- RIGHT SIDEBAR: NODE INSPECTOR & VIRTUAL HARDWARE RACK -->
+    <aside class="sidebar-right">
+      <div class="right-tabs">
+        <button class="tab-btn active" id="tab-btn-inspector" onclick="switchRightTab('inspector')">Node Inspector</button>
+        <button class="tab-btn" id="tab-btn-hardware" onclick="switchRightTab('hardware')">Virtual Ag Rack</button>
+      </div>
+
+      <!-- Tab 1: Node Parameter Inspector -->
+      <div class="tab-content" id="tab-pane-inspector">
+        <div id="inspector-content">
+          <div class="inspector-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+            <p>Click any node on the canvas to configure parameters, threshold logic, and water limits.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Virtual Hardware Simulator Rack (Tactile Dials & Sliders) -->
+      <div class="tab-content" id="tab-pane-hardware" style="display: none;">
+        
+        <!-- Live Sensor Simulator Sliders -->
+        <div class="hardware-box">
+          <div class="hw-box-title">
+            <span>📡 Live Sensor Simulator</span>
+            <span class="status-tag status-running">STREAMING</span>
+          </div>
+          
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">KETOS Salinity (EC):</span>
+              <span class="slider-val" id="val-salinity">2.25 mS/cm</span>
+            </div>
+            <input type="range" min="0.5" max="4.0" step="0.05" value="2.25" class="styled-range" id="slider-salinity">
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">AquaSpy Soil Moisture (VWC):</span>
+              <span class="slider-val" id="val-moisture">17.5%</span>
+            </div>
+            <input type="range" min="10" max="45" step="0.5" value="17.5" class="styled-range" id="slider-moisture">
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Weather Station ET₀:</span>
+              <span class="slider-val" id="val-et0">0.28"/day</span>
+            </div>
+            <input type="range" min="0.05" max="0.50" step="0.01" value="0.28" class="styled-range" id="slider-et0">
+          </div>
+        </div>
+
+        <!-- Preset Test Scenarios -->
+        <div class="hardware-box">
+          <div class="hw-box-title"><span>⚡ Test Scenarios</span></div>
+          <div class="scenario-button-grid">
+            <button class="btn btn-secondary btn-sm" id="btn-scenario-salinity">⚠️ Salinity Spike</button>
+            <button class="btn btn-secondary btn-sm" id="btn-scenario-drought">☀️ Heatwave</button>
+            <button class="btn btn-secondary btn-sm" id="btn-scenario-storm">⛈️ OK Rainstorm</button>
+          </div>
+        </div>
+
+        <!-- WiseConn DropControl Valve #4 Physical Readout -->
+        <div class="hardware-box">
+          <div class="hw-box-title">
+            <span>💧 WiseConn Valve #4 (Block C)</span>
+            <span class="status-tag status-closed" id="rack-valve-4-state">CLOSED</span>
+          </div>
+          <div class="hw-readout-row"><span>Timer Countdown:</span><strong id="rack-valve-4-timer">Standby</strong></div>
+          <div class="hw-readout-row"><span>Nominal Flow Rate:</span><strong>120 GPM</strong></div>
+          <div class="hw-readout-row"><span>Total Delivered:</span><strong id="rack-valve-4-volume">14,200 gal</strong></div>
+        </div>
+
+        <!-- VFD Well Pump #1 Physical Readout -->
+        <div class="hardware-box">
+          <div class="hw-box-title">
+            <span>⚙️ VFD Well Pump #1 (Norman)</span>
+            <span class="status-tag status-stopped" id="rack-pump-state">STANDBY</span>
+          </div>
+          <div class="hw-readout-row"><span>Discharge Flow:</span><strong id="rack-pump-gpm">0 GPM</strong></div>
+          <div class="hw-readout-row"><span>Cumulative Extraction:</span><strong id="rack-pump-ytd">14.88 Ac-Ft</strong></div>
+        </div>
+
+        <!-- Oklahoma Water Resources Board (OWRB) Quota Meter -->
+        <div class="hardware-box">
+          <div class="hw-box-title">
+            <span>🏛️ OWRB Permit Allocation</span>
+            <span class="status-tag status-open">PERMITTED</span>
+          </div>
+          <div class="permit-progress-bg">
+            <div class="permit-progress-bar bar-normal" id="rack-owrb-bar" style="width: 59%;"></div>
+          </div>
+          <div class="hw-readout-row" style="margin-top: 4px;">
+            <span>Annual Garber-Wellington Quota:</span>
+            <strong id="rack-owrb-text">14.88 / 25.0 Ac-Ft (59%)</strong>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Expandable Telemetry Console Drawer -->
+    <div class="console-drawer collapsed" id="console-drawer">
+      <div class="console-header">
+        <span>AgTech Execution &amp; Telemetry Log</span>
+        <button class="btn btn-secondary btn-sm" id="btn-clear-console">Clear Console</button>
+      </div>
+      <div class="console-body" id="console-log-body">
+        <div class="log-entry"><span class="log-time">[System]</span> Farm-Flow engine initialized. Ready for simulation.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       BOTTOM DOCK: TELEMETRY INDICATOR & AUDIT MODAL BUTTONS
+       ========================================================================= -->
+  <footer class="telemetry-dock">
+    <div class="dock-left">
+      <div class="dock-status-indicator">
+        <span class="pulse-dot"></span>
+        <span>Norman AgTech Telemetry: Garber-Wellington Aquifer Monitoring ACTIVE</span>
+      </div>
+    </div>
+
+    <div class="dock-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-open-sheets-modal">
+        Google Sheets Sync
+        <span class="dock-badge" id="sheets-count-badge">1</span>
+      </button>
+
+      <button class="btn btn-secondary btn-sm" id="btn-open-owrb-modal">
+        OWRB Water Rights Ledger
+      </button>
+
+      <button class="btn btn-secondary btn-sm" id="btn-open-webhooks-modal">
+        Webhook API Dispatches
+        <span class="dock-badge" id="webhook-count-badge">0</span>
+      </button>
+
+      <button class="btn btn-secondary btn-sm" id="btn-open-soil-modal">
+        Cleveland County Soil Data
+      </button>
+
+      <button class="btn btn-secondary btn-sm" id="btn-toggle-console" onclick="toggleConsoleDrawer()">
+        Terminal Console
+      </button>
+    </div>
+  </footer>
+
+  <!-- Modals -->
+  <div class="modal-container" id="modal-google-sheets">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Google Sheets Regulatory Water Log (Sheet: 2026_Irrigation_Water_Volume_Norman)</div>
+        <button class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="data-table">
+          <thead>
+            <tr><th>Row ID</th><th>Timestamp</th><th>Equipment ID</th><th>Duration</th><th>Water Discharged</th><th>Salinity EC</th><th>Compliance Note</th></tr>
+          </thead>
+          <tbody id="sheets-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-container" id="modal-owrb">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Oklahoma Water Resources Board (OWRB) — Official Extraction Ledger</div>
+        <button class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="owrb-modal-quota-stat" style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; font-size: 13px;"></div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Audit Timestamp</th><th>Extraction Well</th><th>Pumped Volume</th><th>Acre-Feet Extracted</th><th>Permit Balance Remaining</th><th>State Verification</th></tr>
+          </thead>
+          <tbody id="owrb-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-container" id="modal-webhooks">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Remote Ag Equipment Webhook &amp; API Dispatches</div>
+        <button class="modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="webhook-cards-container"></div>
+    </div>
+  </div>
+
+  <div class="modal-container" id="modal-soil-survey">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Cleveland County, Oklahoma (Norman) NRCS Soil Data &amp; Pedon Health</div>
+        <button class="modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="soil-survey-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Zero-dependency Automation Engine Bundle -->
+  <script src="js/farm-flow.bundle.js"></script>
+
+  <!-- Interactive Modal & Tab Script -->
+  <script>
+    function switchRightTab(tabName) {
+      const inspectorTab = document.getElementById('tab-btn-inspector');
+      const hwTab = document.getElementById('tab-btn-hardware');
+      const inspectorPane = document.getElementById('tab-pane-inspector');
+      const hwPane = document.getElementById('tab-pane-hardware');
+
+      if (tabName === 'inspector') {
+        inspectorTab.classList.add('active');
+        hwTab.classList.remove('active');
+        inspectorPane.style.display = 'flex';
+        hwPane.style.display = 'none';
+      } else {
+        inspectorTab.classList.remove('active');
+        hwTab.classList.add('active');
+        inspectorPane.style.display = 'none';
+        hwPane.style.display = 'flex';
+      }
+    }
+
+    function toggleConsoleDrawer() {
+      const drawer = document.getElementById('console-drawer');
+      drawer.classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

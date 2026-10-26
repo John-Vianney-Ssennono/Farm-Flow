@@ -1,0 +1,939 @@
+/* ==========================================================================
+   FARM-FLOW: APPLE SWIFT / iOS HIG DESIGN SYSTEM - HYDROLOGY BLUE THEME
+   Palette: Curated spectrum of blues focusing on water quantity & optimization
+   (Deep Abyssal Blue, Oceanic Navy, Cobalt, Azure, Cerulean, and Aquamarine)
+   Includes detailed line-by-line explanatory comments for every component.
+   ========================================================================== */
+
+/* Import high-legibility SF-style typeface from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* --------------------------------------------------------------------------
+     1. DEEP ABYSSAL & OCEANIC BACKGROUNDS (DARK MODE FOUNDATION)
+     -------------------------------------------------------------------------- */
+  /* Main viewport background: deep abyssal black-blue representing deep groundwater */
+  --ios-system-bg: #030712;
+  /* Secondary background for containers: oceanic midnight navy */
+  --ios-secondary-bg: #081120;
+  /* Tertiary background for active elements: deep marine slate */
+  --ios-tertiary-bg: #0e1e38;
+  /* Grouped list background for inset cards */
+  --ios-grouped-bg: #0a162c;
+  /* Glassmorphic card surface: semi-transparent cobalt with backdrop blur */
+  --ios-card-bg: rgba(11, 25, 48, 0.88);
+  /* Card hover state with increased brightness */
+  --ios-card-bg-hover: rgba(16, 36, 70, 0.95);
+
+  /* --------------------------------------------------------------------------
+     2. HYDROLOGY BLUE SPECTRUM (WATER QUANTITY & OPTIMIZATION ACCENTS)
+     -------------------------------------------------------------------------- */
+  /* Glacier Blue: Primary high-contrast text color representing pure distilled water */
+  --ios-label: #f0f9ff;
+  /* Mist Blue: Secondary label color for subtitles and metrics */
+  --ios-secondary-label: #93c5fd;
+  /* Deep Water Muted: Tertiary label color for timestamps and captions */
+  --ios-tertiary-label: #60a5fa;
+  /* Subtle water boundary for inactive controls */
+  --ios-quaternary-label: #3b82f6;
+
+  /* Cobalt Royal Blue: Primary action color for navigation, buttons, and highlights */
+  --ios-blue: #2563eb;
+  /* Electric Azure: Bright interactive blue for links and active states */
+  --ios-azure: #3b82f6;
+  /* Pure Aquamarine Cyan: Represents fresh flowing water, high moisture & optimal state */
+  --ios-cyan: #06b6d4;
+  /* Bright Sky Cerulean: Secondary accent for gauges and water depth metrics */
+  --ios-sky: #38bdf8;
+  /* Deep Navy Indigo: Contrast shadow and border tone */
+  --ios-indigo: #1d4ed8;
+  /* Teal Green: Positive agricultural optimization state (e.g., successful salt flush) */
+  --ios-teal: #14b8a6;
+  /* Warning Amber: Water stress warning (e.g. salinity threshold exceeded) */
+  --ios-warning: #f59e0b;
+  /* Alert Red: Critical water deficit or extreme soil runoff hazard */
+  --ios-alert: #ef4444;
+
+  /* --------------------------------------------------------------------------
+     3. MATERIALS, SEPARATORS & TYPOGRAPHY
+     -------------------------------------------------------------------------- */
+  /* Hairline border separator: translucent aquatic blue */
+  --ios-separator: rgba(56, 189, 248, 0.20);
+  /* Frosted glass material: translucent navy with intense background blur */
+  --ios-blur-material: rgba(7, 18, 38, 0.82);
+
+  /* Apple San Francisco / Plus Jakarta Sans fallback font stack */
+  --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", sans-serif;
+  /* Apple standard card corner radius (16px) */
+  --radius-ios-card: 16px;
+  /* Apple standard touch target corner radius (12px) */
+  --radius-ios-btn: 12px;
+}
+
+/* Global box-sizing reset for precise layout calculations across mobile and desktop */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base body styling: deep blue hydrology background with smooth flexbox layout */
+body {
+  background: radial-gradient(circle at 50% 0%, #0c2044 0%, #030712 100%);
+  color: var(--ios-label);
+  font-family: var(--font-sf);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   CROSS-PLATFORM HEADER / TOOLBAR (TOP DESKTOP CONTROLS)
+   ========================================================================== */
+/* Header wrapper displaying app title, USDA badge, and device mode switcher */
+.platform-toolbar {
+  width: 100%;
+  max-width: 1200px;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ios-separator);
+  margin-bottom: 12px;
+  background: rgba(3, 7, 18, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+/* Brand section: logo glyph + title */
+.platform-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Water drop logo mark styled with a vibrant blue-cyan gradient */
+.apple-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
+  border-radius: 9px;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.45);
+}
+
+/* Device toggle button container (iPhone vs iPad/Desktop) */
+.platform-modes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mode toggle button in iOS pill shape */
+.mode-toggle-btn {
+  background: var(--ios-secondary-bg);
+  border: 1px solid var(--ios-separator);
+  color: var(--ios-secondary-label);
+  font-family: var(--font-sf);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* Active mode toggle state: highlighted in bright blue */
+.mode-toggle-btn.active {
+  background: linear-gradient(135deg, #2563eb, #0284c7);
+  color: #fff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+}
+
+/* ==========================================================================
+   VIEWPORT WRAPPER & APPLE HARDWARE FRAMES
+   ========================================================================== */
+/* Centered container holding the simulated hardware screen */
+.app-viewport-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 40px;
+}
+
+/* iPhone 16 Pro hardware bezel frame with titanium perimeter & soft shadow */
+.device-frame-iphone {
+  width: 416px;
+  height: 870px;
+  background: var(--ios-system-bg);
+  border: 12px solid #0f1c30;
+  border-radius: 56px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(56, 189, 248, 0.2);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Full-width cross-platform mode (iPad / Android Tablet / Desktop) */
+.device-frame-full {
+  width: 100%;
+  max-width: 960px;
+  min-height: 840px;
+  background: var(--ios-system-bg);
+  border: 1px solid var(--ios-separator);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   iOS STATUS BAR & DYNAMIC ISLAND
+   ========================================================================== */
+/* Top bar containing time, Dynamic Island pill, and network telemetry */
+.ios-status-bar {
+  height: 48px;
+  padding: 0 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 50;
+  background: transparent;
+}
+
+/* Apple Dynamic Island pill with water telemetry indicator */
+.dynamic-island {
+  width: 124px;
+  height: 30px;
+  background: #020617;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ios-cyan);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+}
+
+/* Pulsing cyan dot representing live water telemetry synchronization */
+.island-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--ios-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--ios-cyan);
+  animation: island-pulse 2s infinite;
+}
+
+@keyframes island-pulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* Right side status items: 5G, Wi-Fi, battery percentage */
+.status-right-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ios-secondary-label);
+}
+
+/* ==========================================================================
+   iOS NAVIGATION BAR (LARGE TITLE COLLAPSIBLE HEADER)
+   ========================================================================== */
+.ios-nav-bar {
+  padding: 10px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px solid var(--ios-separator);
+  background: rgba(3, 7, 18, 0.88);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.ios-nav-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Title styled with clean typography and subtle cyan-blue gradient */
+.ios-nav-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  background: linear-gradient(90deg, #f0f9ff 0%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Location pill displaying the current Cleveland County agricultural district */
+.ios-location-pill {
+  font-size: 12px;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.15);
+  padding: 4px 12px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.ios-nav-subtitle {
+  font-size: 12px;
+  color: var(--ios-secondary-label);
+}
+
+/* ==========================================================================
+   iOS SEGMENTED CONTROL (QUICK LOCATION PICKER)
+   ========================================================================== */
+.ios-segmented-control {
+  background: rgba(14, 30, 56, 0.65);
+  border: 1px solid var(--ios-separator);
+  padding: 3px;
+  border-radius: 12px;
+  display: flex;
+  position: relative;
+  margin: 10px 16px;
+}
+
+.segment-item {
+  flex: 1;
+  text-align: center;
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ios-secondary-label);
+  cursor: pointer;
+  border-radius: 9px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+/* Active segment pill: royal blue with soft drop shadow */
+.segment-item.active {
+  background: linear-gradient(135deg, #1d4ed8, #0284c7);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.5);
+}
+
+/* ==========================================================================
+   SCROLLABLE CONTENT AREA
+   ========================================================================== */
+.ios-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 95px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   iOS INSET GROUPED CARDS (HYDROLOGY GLASSMORPHISM)
+   ========================================================================== */
+.ios-card {
+  background: var(--ios-card-bg);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--radius-ios-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.6);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.ios-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Apple SF rounded square icon glyphs in blue spectrum */
+.sf-icon-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* Blue spectrum icon badge gradients */
+.badge-blue { background: linear-gradient(135deg, #1e40af, #3b82f6); box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+.badge-cyan { background: linear-gradient(135deg, #0891b2, #06b6d4); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+.badge-sky { background: linear-gradient(135deg, #0284c7, #38bdf8); box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+.badge-indigo { background: linear-gradient(135deg, #1e1b4b, #4338ca); box-shadow: 0 0 10px rgba(67, 56, 202, 0.4); }
+.badge-teal { background: linear-gradient(135deg, #0f766e, #14b8a6); box-shadow: 0 0 10px rgba(20, 184, 166, 0.4); }
+.badge-orange { background: linear-gradient(135deg, #b45309, #f59e0b); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+.badge-green { background: linear-gradient(135deg, #047857, #10b981); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+
+.card-title-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #fff;
+}
+
+.card-caption-text {
+  font-size: 11px;
+  color: var(--ios-secondary-label);
+}
+
+/* ==========================================================================
+   GOOGLE SATELLITE MAP & SEARCH BAR
+   ========================================================================== */
+.ios-search-bar {
+  background: rgba(14, 30, 56, 0.7);
+  border: 1px solid var(--ios-separator);
+  border-radius: 12px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ios-search-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: var(--font-sf);
+  font-size: 13.5px;
+  width: 100%;
+  outline: none;
+}
+
+.ios-search-input::placeholder {
+  color: var(--ios-secondary-label);
+}
+
+/* Map viewport frame */
+.map-viewport-container {
+  width: 100%;
+  height: 250px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--ios-separator);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Floating overlay buttons inside the map */
+.map-control-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 500;
+}
+
+.map-icon-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(8, 17, 32, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--ios-separator);
+  border-radius: 9px;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.map-icon-btn:hover {
+  background: #1e3a8a;
+  color: #fff;
+}
+
+/* ==========================================================================
+   WATER QUANTITY & HYDRAULIC METRICS GRID
+   ========================================================================== */
+.water-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Individual metric tile with dark oceanic background */
+.metric-tile {
+  background: rgba(14, 30, 56, 0.5);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-tile-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ios-secondary-label);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-tile-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.metric-tile-sub {
+  font-size: 11px;
+  color: var(--ios-cyan);
+}
+
+/* Horizontal water storage bar */
+.progress-container {
+  width: 100%;
+  height: 9px;
+  background: rgba(14, 30, 56, 0.8);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* Blue gradients for water volume fill */
+.fill-blue { background: linear-gradient(90deg, #1d4ed8, #38bdf8); }
+.fill-cyan { background: linear-gradient(90deg, #0284c7, #22d3ee); }
+.fill-teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+
+/* Range sliders styled in glowing blue */
+.styled-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #0f244a;
+  outline: none;
+}
+
+.styled-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #38bdf8;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  transition: transform 0.15s ease;
+}
+
+.styled-range::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+}
+
+/* ==========================================================================
+   AI AGRONOMIST RECOMMENDATION CARDS (WITH IMPLEMENT / IGNORE)
+   ========================================================================== */
+.ai-recommendation-card {
+  background: rgba(11, 25, 48, 0.95);
+  border-radius: var(--radius-ios-card);
+  border: 1px solid var(--ios-separator);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Color-coded indicator border on left */
+.ai-recommendation-card.priority-critical {
+  border-left: 5px solid #ef4444;
+}
+
+.ai-recommendation-card.priority-high {
+  border-left: 5px solid #0284c7;
+}
+
+.ai-recommendation-card.priority-advisory {
+  border-left: 5px solid #06b6d4;
+}
+
+.rec-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rec-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.35;
+}
+
+.rec-priority-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.badge-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.badge-high { background: rgba(2, 132, 199, 0.25); color: #38bdf8; }
+.badge-advisory { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+
+.rec-body-text {
+  font-size: 13px;
+  color: #e0f2fe;
+  line-height: 1.45;
+}
+
+/* Scientific USDA explanation callout */
+.rec-rationale-box {
+  background: rgba(3, 7, 18, 0.5);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #bae6fd;
+  border: 1px dashed rgba(56, 189, 248, 0.25);
+  line-height: 1.4;
+}
+
+.rec-rationale-box strong {
+  color: #38bdf8;
+}
+
+/* Action button row: Implement vs Ignore */
+.rec-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* Implement Button in high-voltage oceanic blue */
+.btn-ios-implement {
+  flex: 1;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #fff;
+  font-family: var(--font-sf);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: var(--radius-ios-btn);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.btn-ios-implement:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* Ignore Button */
+.btn-ios-ignore {
+  background: rgba(14, 30, 56, 0.6);
+  color: var(--ios-secondary-label);
+  font-family: var(--font-sf);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: var(--radius-ios-btn);
+  border: 1px solid var(--ios-separator);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ios-ignore:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Status badge after decision is recorded */
+.status-badge-decided {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+  width: 100%;
+}
+
+.decided-implemented { background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.decided-ignored { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+/* ==========================================================================
+   CONVERSATIONAL AI CHAT DRAWER
+   ========================================================================== */
+.ai-chat-card {
+  background: var(--ios-card-bg);
+  border-radius: var(--radius-ios-card);
+  border: 1px solid var(--ios-separator);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-messages-container {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 85%;
+}
+
+/* Farmer speech bubble in rich cobalt */
+.bubble-user {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4);
+}
+
+/* AI Agronomist speech bubble in oceanic marine */
+.bubble-ai {
+  background: rgba(14, 30, 56, 0.75);
+  border: 1px solid var(--ios-separator);
+  color: #f0f9ff;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(3, 7, 18, 0.6);
+  border-radius: 20px;
+  padding: 4px 6px 4px 14px;
+  border: 1px solid var(--ios-separator);
+}
+
+.chat-text-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-family: var(--font-sf);
+  outline: none;
+}
+
+.chat-send-btn {
+  width: 28px;
+  height: 28px;
+  background: #0284c7;
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-send-btn:hover {
+  background: #38bdf8;
+}
+
+/* ==========================================================================
+   USDA PEDON HORIZON ROWS
+   ========================================================================== */
+.horizon-list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.horizon-row-card {
+  background: rgba(14, 30, 56, 0.5);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.horizon-name-pill {
+  font-size: 14px;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.2);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.horizon-info {
+  flex: 1;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.horizon-texture {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.horizon-depth {
+  font-size: 11px;
+  color: var(--ios-secondary-label);
+}
+
+.horizon-chemistry {
+  text-align: right;
+  font-size: 11px;
+  color: var(--ios-cyan);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   FROSTED GLASS BOTTOM TAB BAR
+   ========================================================================== */
+.ios-tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  padding: 8px 10px 22px;
+  background: rgba(3, 7, 18, 0.90);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-top: 1px solid var(--ios-separator);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--ios-secondary-label);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+/* Active tab highlighted in vibrant cyan-blue */
+.tab-item.active {
+  color: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+}
+
+.tab-item:hover {
+  color: #fff;
+}
+
+.tab-icon-svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* iOS Home Indicator capsule at the bottom */
+.ios-home-indicator {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 4.5px;
+  background: #38bdf8;
+  border-radius: 4px;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 110;
+}
+
+/* Custom scrollbar matching hydrology theme */
+.ios-scroll-content::-webkit-scrollbar {
+  width: 4px;
+}
+.ios-scroll-content::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+}

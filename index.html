@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Document Character Encoding and Responsive Viewport for Mobile Devices -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Application Title focusing on Water Quantity, USDA Soil Taxonomy, and AI Agronomist -->
+  <title>Farm-Flow — Water Quantity Optimization &amp; USDA Soil Science</title>
+  
+  <!-- SEO Meta Description summarizing core agricultural capabilities -->
+  <meta name="description" content="Cross-platform React mobile application in Apple Swift HIG design for farmers in Cleveland County, Oklahoma. USDA soil structure analysis, salinity-adjusted water quantity, and AgriSense AI Agent recommendations.">
+
+  <!-- Apple iOS Web App Meta Tags for Native Fullscreen Experience on iPhone & iPad -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Farm-Flow">
+
+  <!-- Leaflet GIS Map CSS (Styling interactive satellite and street map layers) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet GIS JavaScript Engine -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- React 18 Production UMD (Core UI Component Framework) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <!-- ReactDOM 18 Production UMD (Renders React components into the browser DOM) -->
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone (Compiles JSX live in the browser with zero build steps) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Apple Swift / iOS Human Interface Guidelines Stylesheet (Hydrology Blue Palette) -->
+  <link rel="stylesheet" href="css/ios-swift.css">
+  
+  <!-- Water Droplet Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+</head>
+<body>
+
+  <!-- =========================================================================
+       GLOBAL PLATFORM HEADER WITH APP MODE SWITCHER
+       Allows farmers to toggle between the mobile React Swift app and the
+       visual low-code Node-RED / Zapier workflow automation builder.
+       ========================================================================= -->
+  <header style="width: 100%; max-width: 1200px; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(56, 189, 248, 0.2); background: rgba(3, 7, 18, 0.7); backdrop-filter: blur(12px);">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <!-- Water Droplet Logo Glyphs -->
+      <span style="font-size: 20px;">💧</span>
+      <div>
+        <strong style="color: #fff; font-size: 16px; letter-spacing: -0.3px;">Farm-Flow</strong>
+        <span style="font-size: 11px; background: rgba(14, 165, 233, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 12px; font-weight: 700; margin-left: 6px; border: 1px solid rgba(56, 189, 248, 0.3);">
+          WATER QUANTITY OPTIMIZATION
+        </span>
+      </div>
+    </div>
+    
+    <!-- Mode Switcher Navigation Links -->
+    <nav style="display: flex; gap: 10px;">
+      <a href="index.html" style="text-decoration: none; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1d4ed8, #0284c7); border: 1px solid #38bdf8; padding: 6px 14px; border-radius: 8px; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);">
+        📱 React Swift App
+      </a>
+      <a href="automation-builder.html" style="text-decoration: none; font-size: 12px; font-weight: 600; color: #93c5fd; background: rgba(14, 30, 56, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px 14px; border-radius: 8px;">
+        ⚡ Visual Node-RED Engine
+      </a>
+    </nav>
+  </header>
+
+  <!-- =========================================================================
+       REACT MOUNTING ROOT
+       The entire cross-platform mobile application mounts into this container.
+       ========================================================================= -->
+  <main id="react-farm-flow-root" style="width: 100%;"></main>
+
+  <!-- =========================================================================
+       APPLICATION DATA & ENGINE SCRIPTS
+       ========================================================================= -->
+  <!-- 1. USDA Cleveland County Soil Survey Database and Hydrological Physics -->
+  <script src="js/cleveland-usda-data.js"></script>
+
+  <!-- 2. AgriSense AI Agronomist Reasoning Engine & Recommendation Generator -->
+  <script src="js/ai-agent-engine.js"></script>
+
+  <!-- 3. React Cross-Platform Swift UI Application Component (compiled via Babel) -->
+  <script type="text/babel" src="js/FarmFlowReactApp.jsx"></script>
+
+</body>
+</html>
