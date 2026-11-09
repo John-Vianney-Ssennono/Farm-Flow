@@ -1221,3 +1221,232 @@ body {
   color: #fff;
   font-weight: 700;
 }
+
+/* ==========================================================================
+   DECLUTTERED UI EXTENSIONS: UNIFIED STATUS PILL, SEARCH AUTOCOMPLETE & AI TOOL
+   ========================================================================== */
+
+/* 8. Search Suggestions Floating Dropdown */
+.search-wrapper-relative {
+  position: relative;
+  width: 100%;
+}
+
+.search-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: rgba(11, 26, 50, 0.98);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 14px;
+  overflow: hidden;
+  z-index: 1000;
+  max-height: 260px;
+  overflow-y: auto;
+  animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-item {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: rgba(2, 132, 199, 0.3);
+}
+
+.suggestion-primary {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.suggestion-secondary {
+  font-size: 11px;
+  color: #93c5fd;
+  margin-top: 1px;
+}
+
+/* 9. Unified Status Capsule Pill (Replaces 4 stacked header bars) */
+.unified-status-pill {
+  width: 100%;
+  background: rgba(14, 30, 56, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11.5px;
+}
+
+.status-pill-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0f2fe;
+  overflow: hidden;
+}
+
+.status-pill-location-text {
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.status-pill-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.telemetry-chip {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #bae6fd;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* 10. Dedicated AI Recommendation Search & Ask Tool */
+.ai-search-tool-card {
+  background: linear-gradient(135deg, rgba(14, 30, 56, 0.9), rgba(8, 17, 32, 0.95));
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-search-tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-search-tool-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-search-input-box {
+  display: flex;
+  gap: 8px;
+  background: rgba(3, 7, 18, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 12px;
+  padding: 4px 6px 4px 12px;
+  align-items: center;
+}
+
+.ai-search-input-box:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.ai-search-input-field {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 13px;
+  flex: 1;
+}
+
+.ai-search-input-field::placeholder {
+  color: #64748b;
+}
+
+.ai-search-submit-btn {
+  background: linear-gradient(135deg, #1d4ed8, #0284c7);
+  border: 1px solid #38bdf8;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.ai-search-submit-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+/* 11. Collapsible Scientific Rationale Toggle */
+.btn-toggle-rationale {
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 3px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+
+.btn-toggle-rationale:hover {
+  color: #bae6fd;
+}
+
+.ai-query-badge {
+  font-size: 10px;
+  background: rgba(2, 132, 199, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #67e8f9;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}

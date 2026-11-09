@@ -118,11 +118,41 @@ Built directly with Node.js standard libraries (`node:http`, `node:fs`, `node:pa
 * `GET /api/journal` & `POST /api/journal` — File-persisted Decision Journal recording implemented and ignored decisions.
 * `GET /api/hardware/status` — Virtual equipment telemetry (valves 1-4, VFD pump RPM, pressure PSI, OWRB water permit balance).
 * `POST /api/ai/chat` — Conversational agronomist assistant with soil science context.
+* `POST /api/ai/recommend` — Dynamically generates structured, actionable recommendation cards based on user query.
 
 ---
 
-## 📱 3. Interactive Swift HIG Experience & Seamless Navigation
+## 🌍 4. Global Location Search & Real-Time Syncing
 
+* **Universal Location Input**:
+  * Users can search by **city, state, region, country, or raw coordinates (`lat, lng`)**.
+  * Integrated with a live **OpenStreetMap Nominatim Geocoding Proxy** (`/api/location/search`) backed by a pre-computed catalog of 50+ major agricultural regions worldwide.
+  * Auto-complete dropdown delivers instantaneous suggestions as the user types.
+* **Full-App Data Synchronization**:
+  * When a location is selected, the app syncs the **interactive Leaflet GIS satellite map**, **local weather telemetry (temperature, humidity, precipitation, ET0)**, **USDA soil taxonomy and pedon horizons**, **root zone volumetric water content (VWC)**, **salinity EC**, and **field water storage gallons**.
+  * Dynamically recalculates plant available water capacity, permanent wilting point, and leaching requirements for the newly selected site.
+
+---
+
+## 🤖 5. AgriSense AI Search & Recommendation Generator
+
+* **Natural Language Query Understanding**:
+  * Users can ask specific agronomic questions (e.g. *"How to handle heatwave and high temperatures?"*, *"What should I do about soil salinity?"*, *"How to prevent runoff on heavy clay?"*, *"Managing sandy soil water percolation"*, *"Is tomorrow rain forecast enough for my wheat?"*).
+  * The AI engine evaluates question intent using regex word boundary matching and synthesizes current soil taxonomy, VWC, and atmospheric demand.
+* **Actionable Recommendation Cards**:
+  * Emits prioritized cards (`CRITICAL`, `HIGH`, `ADVISORY`) with precise calculated water gallon adjustments (e.g. flush gallons for leaching or pump savings for rain hold).
+  * Direct 1-click **Implement** (records in journal, dispatches hardware commands) or **Ignore** (with farmer reasoning modal).
+  * Collapsible **USDA Scientific Rationale** keeps the initial view clean while allowing deep-dive inspection into USDA Agriculture Handbook 60, FAO-56, and NRCS soil mechanics.
+
+---
+
+## 📱 6. Decluttered Apple Swift HIG UI & Seamless Navigation
+
+* **Unified Status Pill Header**:
+  * Replaced multiple stacked toolbars and status strips with an elegant Apple iOS 18-styled **unified status pill** displaying the current location, weather badge, soil unit, and a 1-tap "Locate Me" button.
+* **Decluttered Card Architecture**:
+  * Scientific rationales are cleanly tucked behind interactive disclosure buttons (`btn-toggle-rationale`), reducing cognitive load and visual noise.
+  * Prompts and actions feature clear typographic hierarchy and responsive touch targets.
 * **Fixed "Switch to Swift React App" Navigation**:
   * Inlined Babel compilation inside `index.html` eliminates browser `file://` CORS restrictions, ensuring the app opens with zero blank screens under both local file execution and HTTP server hosting.
   * Preserved Leaflet map container across bottom tab switching with automatic `map.invalidateSize()` calls to prevent gray blank maps.

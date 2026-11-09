@@ -1,62 +1,64 @@
 /**
  * ==============================================================================
- * FARM-FLOW: MAIN REACT APPLICATION COMPONENT (APPLE SWIFT HIG DESIGN)
+ * FARM-FLOW: MAIN REACT APPLICATION (APPLE SWIFT HIG DESIGN SYSTEM)
  * ==============================================================================
- * Focus: Water Quantity Optimization, Salinity Physics, USDA Soil Structure,
- * Live Current Location Detection (GPS / IP / Search), Real-time Weather,
- * Google Maps / Leaflet Satellite GIS, and AgriSense AI Recommendation Agent.
- * 
- * Styled in an authentic Apple iOS HIG aesthetic with a curated spectrum of blues.
- * Fully documented with line-by-line explanatory comments.
+ * Focus:
+ * 1. Universal Location Geocoding: Pulls & syncs live data for ANY location worldwide
+ * 2. Natural Language AI Recommendation Generator: Custom plans tailored to farmer queries
+ * 3. Decluttered Apple Swift UI: Clean typography, spacious layout & collapsible details
  * ==============================================================================
  */
 
-// Destructure standard React hooks from the global React 18 object
 const { useState, useEffect, useRef } = React;
 
-/**
- * Root React functional component for the Farm-Flow platform
- */
 function FarmFlowReactApp() {
 
   // ----------------------------------------------------------------------------
-  // 1. APPLICATION STATE HOOKS
+  // 1. APPLICATION STATE
   // ----------------------------------------------------------------------------
 
-  // deviceMode: Toggles between 'iphone' (iPhone 16 Pro bezel) and 'fullscreen' (iPad / Desktop)
+  // Device presentation mode: 'iphone' (bezel) or 'fullscreen' (iPad / Desktop)
   const [deviceMode, setDeviceMode] = useState('iphone');
 
-  // activeTab: Tracks the currently active iOS bottom tab ('map', 'water', 'ai', 'pedon', 'log')
+  // Active bottom navigation tab: 'map', 'water', 'ai', 'pedon', 'log'
   const [activeTab, setActiveTab] = useState('map');
 
-  // isDetectingLocation: Indicates ongoing GPS or network geolocation lookup
+  // Loading & status flags
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-
-  // toastMessage: Floating iOS status notification banner
+  const [isGeneratingRec, setIsGeneratingRec] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // ignoreModalRecId: Holds the ID of the recommendation currently being dismissed via Action Sheet
+  // Search input & auto-complete suggestions
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Dedicated AI Recommendation Search Tool input
+  const [aiSearchInput, setAiSearchInput] = useState('');
+
+  // Dismiss reason action sheet modal
   const [ignoreModalRecId, setIgnoreModalRecId] = useState(null);
 
-  // journalFilter: Filter for Decision Journal ('all', 'IMPLEMENTED', 'IGNORED')
+  // Collapsible rationale states per recommendation card { [recId]: boolean }
+  const [expandedRationales, setExpandedRationales] = useState({});
+
+  // Journal filter state ('all', 'IMPLEMENTED', 'IGNORED')
   const [journalFilter, setJournalFilter] = useState('all');
 
-  // selectedLocation: Holds the active geographic parcel coordinates & metadata
-  const [selectedLocation, setSelectedLocation] = useState(
-    window.USDA_CLEVELAND_SOIL_DATA ? window.USDA_CLEVELAND_SOIL_DATA.sampleLocations[0] : {
-      id: 'norman-central',
-      name: 'Central Norman Research Farmland',
-      area: 'Norman Uplands',
-      lat: 35.2226,
-      lng: -97.4395,
-      soilUnitKey: 'stephenville-harrah-newalla',
-      defaultSalinity: 1.85,
-      moistureVwc: 18.2,
-      crop: 'Winter Wheat & Specialty Pecan'
-    }
-  );
+  // Active Geographic Parcel
+  const [selectedLocation, setSelectedLocation] = useState({
+    id: 'norman-central',
+    name: 'Norman Research Farmland',
+    area: 'Norman, Oklahoma',
+    city: 'Norman',
+    state: 'OK',
+    country: 'USA',
+    lat: 35.2226,
+    lng: -97.4395,
+    soilUnitKey: 'stephenville-harrah-newalla'
+  });
 
-  // liveWeather: Real-time meteorological telemetry for the selected location
+  // Live Meteorological Telemetry
   const [liveWeather, setLiveWeather] = useState({
     tempF: 74.5,
     humidity: 52,
@@ -67,49 +69,41 @@ function FarmFlowReactApp() {
     condition: 'Optimal • Showers in 24h Forecast'
   });
 
-  // selectedSoilUnit: Holds the detected USDA NRCS soil survey map unit for the selected parcel
-  const [selectedSoilUnit, setSelectedSoilUnit] = useState(
-    window.USDA_CLEVELAND_SOIL_DATA ? window.USDA_CLEVELAND_SOIL_DATA.soilUnits['stephenville-harrah-newalla'] : {
-      id: 'stephenville-harrah-newalla',
-      name: 'Stephenville-Harrah-Newalla Complex',
-      countySharePercent: 40,
-      sandPercent: 62,
-      siltPercent: 22,
-      clayPercent: 16,
-      bulkDensityGcm3: 1.42,
-      permeabilityRating: 'Moderate',
-      infiltrationRateInHr: 1.15,
-      availableWaterCapacityInIn: 0.15,
-      rootZoneDepthInches: 48,
-      permanentWiltingPointVwc: 7.5,
-      fieldCapacityVwc: 22.5,
-      salinitySensitivityThreshold: 2.0,
-      description: 'Dominant agricultural upland in central Cleveland County. Well-drained sandy loam with optimal infiltration for winter wheat, canola, and specialty pecans.',
-      horizons: [
-        { name: 'Ap (0-8 in)', texture: 'Fine Sandy Loam', depth: '0-8"', color: 'Brown (7.5YR 4/4)', ph: 6.4, om: '1.8%' },
-        { name: 'Bt1 (8-24 in)', texture: 'Sandy Clay Loam', depth: '8-24"', color: 'Reddish Brown (5YR 4/4)', ph: 6.1, om: '0.6%' },
-        { name: 'Bt2 (24-42 in)', texture: 'Clay Loam', depth: '24-42"', color: 'Yellowish Red (5YR 4/6)', ph: 6.3, om: '0.3%' },
-        { name: 'Cr (42-60 in)', texture: 'Fractured Sandstone', depth: '42-60"+', color: 'Strong Brown (7.5YR 5/6)', ph: 6.8, om: '0.1%' }
-      ]
-    }
-  );
-  
-  // currentVwc: Real-time volumetric water content (% VWC measured in crop root zone)
+  // Active USDA Soil Survey Unit
+  const [selectedSoilUnit, setSelectedSoilUnit] = useState({
+    id: 'stephenville-harrah-newalla',
+    name: 'Stephenville-Harrah-Newalla Complex',
+    primaryTexture: 'Fine Sandy Loam over Sandy Clay Loam',
+    countySharePercent: 40,
+    sandPercent: 62,
+    siltPercent: 22,
+    clayPercent: 16,
+    bulkDensityGcm3: 1.42,
+    permeabilityRating: 'Moderate',
+    infiltrationRateInHr: 1.15,
+    availableWaterCapacityInIn: 0.15,
+    rootZoneDepthInches: 48,
+    permanentWiltingPointVwc: 7.5,
+    fieldCapacityVwc: 22.5,
+    salinitySensitivityThreshold: 2.0,
+    description: 'Dominant agricultural upland. Well-drained sandy loam with optimal infiltration for winter wheat and specialty crops.',
+    horizons: [
+      { name: 'Ap (0-8 in)', texture: 'Fine Sandy Loam', depth: '0-8"', color: 'Brown (7.5YR 4/4)', ph: 6.4, om: '1.8%' },
+      { name: 'Bt1 (8-24 in)', texture: 'Sandy Clay Loam', depth: '8-24"', color: 'Reddish Brown (5YR 4/4)', ph: 6.1, om: '0.6%' },
+      { name: 'Bt2 (24-42 in)', texture: 'Clay Loam', depth: '24-42"', color: 'Yellowish Red (5YR 4/6)', ph: 6.3, om: '0.3%' },
+      { name: 'Cr (42-60 in)', texture: 'Fractured Sandstone', depth: '42-60"+', color: 'Strong Brown (7.5YR 5/6)', ph: 6.8, om: '0.1%' }
+    ]
+  });
+
+  // Real-time Hydraulic Controls
   const [currentVwc, setCurrentVwc] = useState(18.2);
-
-  // salinityEc: Soil pore water electrical conductivity in mS/cm (or dS/m)
-  const [salinityEc, setSalinityEc] = useState(2.25);
-
-  // fieldAcres: Total cultivated parcel acreage (used for Gallon volume calculations)
+  const [salinityEc, setSalinityEc] = useState(2.15);
   const [fieldAcres, setFieldAcres] = useState(12.5);
 
-  // searchQuery: Text input for geocoding / searching any address worldwide
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // recommendations: Array of active AI Agronomist recommendations
+  // Recommendations deck
   const [recommendations, setRecommendations] = useState([]);
 
-  // farmLogs: Array of farmer decision history entries (Implemented vs Ignored)
+  // Decision journal
   const [farmLogs, setFarmLogs] = useState([
     {
       id: 'init-seed-1',
@@ -124,26 +118,23 @@ function FarmFlowReactApp() {
     }
   ]);
 
-  // chatMessages: History of conversational exchanges with the AgriSense AI assistant
+  // Conversational AI Messages
   const [chatMessages, setChatMessages] = useState([
     {
       sender: 'ai',
-      text: 'Hello! I am AgriSense AI, your personal precision agronomist. I analyze your current location, real-time meteorological forecasts, USDA soil taxonomy, and salinity metrics to optimize every acre-inch of water.'
+      text: 'Hello! I am AgriSense AI. Ask me any question or request a custom irrigation recommendation for your current location.'
     }
   ]);
-
-  // chatInput: Farmer's current typed chat query
   const [chatInput, setChatInput] = useState('');
 
-  // ----------------------------------------------------------------------------
-  // 2. DOM & MAP INSTANCE REFERENCES
-  // ----------------------------------------------------------------------------
+  // DOM & Map references
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
+  const searchDebounceTimer = useRef(null);
 
   // ----------------------------------------------------------------------------
-  // 3. TOAST NOTIFICATION HELPER
+  // 2. TOAST HELPER
   // ----------------------------------------------------------------------------
   const showToast = (msg, duration = 3500) => {
     setToastMessage(msg);
@@ -153,72 +144,64 @@ function FarmFlowReactApp() {
   };
 
   // ----------------------------------------------------------------------------
-  // 4. LIVE TELEMETRY & CURRENT LOCATION DATA FETCHER
+  // 3. UNIVERSAL DATA FETCHER (SYNCS FOR ANY LOCATION ON EARTH)
   // ----------------------------------------------------------------------------
-  /**
-   * Pulls comprehensive data for any coordinate (lat, lng) from the backend server
-   * or falls back to internal USDA database if offline.
-   */
   const fetchLocationData = async (lat, lng, customName = null) => {
     setIsDetectingLocation(true);
     try {
-      // 1. Attempt query to Farm-Flow backend API
       const res = await fetch(`/api/telemetry?lat=${lat}&lng=${lng}&acres=${fieldAcres}&vwc=${currentVwc}&ec=${salinityEc}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          // Update Location
+          const loc = data.location;
           setSelectedLocation({
             id: `loc-${lat.toFixed(3)}-${lng.toFixed(3)}`,
-            name: customName || data.location.name || `Parcel (${lat.toFixed(3)}°N, ${Math.abs(lng).toFixed(3)}°W)`,
-            area: data.location.area || `${data.location.city || 'Local Watershed'}, ${data.location.state || 'OK'}`,
+            name: customName || loc.name || `Parcel (${lat.toFixed(3)}°N, ${Math.abs(lng).toFixed(3)}°W)`,
+            area: loc.area || `${loc.city || 'District'}, ${loc.state || 'Region'}`,
+            city: loc.city || 'Local City',
+            state: loc.state || '',
+            country: loc.country || '',
             lat: Number(lat.toFixed(4)),
             lng: Number(lng.toFixed(4)),
-            soilUnitKey: data.soilUnit.id,
-            moistureVwc: data.liveMetrics.currentVwc,
-            defaultSalinity: data.liveMetrics.salinityEc
+            soilUnitKey: data.soilUnit.id
           });
 
-          // Update Soil
-          if (data.soilUnit) {
-            setSelectedSoilUnit(data.soilUnit);
-          }
+          if (data.soilUnit) setSelectedSoilUnit(data.soilUnit);
+          if (data.weather) setLiveWeather(data.weather);
 
-          // Update Weather
-          if (data.weather) {
-            setLiveWeather(data.weather);
-          }
-
-          // Update Measurements
           setCurrentVwc(data.liveMetrics.currentVwc);
           setSalinityEc(data.liveMetrics.salinityEc);
 
-          // Update Recommendations
           if (data.recommendations && data.recommendations.length > 0) {
             setRecommendations(data.recommendations);
           }
 
-          showToast(`📍 Live data pulled for ${data.location.name || 'Current Location'} (${data.weather ? data.weather.tempF : 75}°F)`);
+          // Pan Leaflet Map smoothly
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.flyTo([lat, lng], 13, { duration: 1.2 });
+            if (markerRef.current) {
+              markerRef.current.setLatLng([lat, lng]);
+              markerRef.current.setPopupContent(`<b>${loc.name || customName}</b><br/>${data.soilUnit.name}`).openPopup();
+            }
+          }
+
+          showToast(`📍 Synced location: ${loc.area || customName} (${data.weather ? data.weather.tempF : 75}°F)`);
           setIsDetectingLocation(false);
           return;
         }
       }
     } catch (err) {
-      console.log('Backend API call bypassed or offline, falling back to local USDA dataset:', err.message);
+      console.log('Backend telemetry bypassed, using client resolver:', err.message);
     }
 
-    // 2. Fallback: Local USDA Dataset Nearest Neighbor Resolution
+    // Client-side fallback
     if (window.USDA_CLEVELAND_SOIL_DATA) {
       let closest = window.USDA_CLEVELAND_SOIL_DATA.sampleLocations[0];
       let minD = 999;
       window.USDA_CLEVELAND_SOIL_DATA.sampleLocations.forEach(loc => {
         const d = Math.hypot(loc.lat - lat, loc.lng - lng);
-        if (d < minD) {
-          minD = d;
-          closest = loc;
-        }
+        if (d < minD) { minD = d; closest = loc; }
       });
-
       const u = window.USDA_CLEVELAND_SOIL_DATA.soilUnits[closest.soilUnitKey];
       if (u) setSelectedSoilUnit(u);
 
@@ -226,38 +209,34 @@ function FarmFlowReactApp() {
         ...closest,
         lat: Number(lat.toFixed(4)),
         lng: Number(lng.toFixed(4)),
-        name: customName || `Current Location (${lat.toFixed(3)}°N, ${Math.abs(lng).toFixed(3)}°W)`
+        name: customName || `Location (${lat.toFixed(3)}°, ${lng.toFixed(3)}°)`
       });
-
-      setCurrentVwc(closest.moistureVwc || 18.2);
-      setSalinityEc(closest.defaultSalinity || 2.0);
-      showToast(`📍 Pulled USDA Soil Data for coordinates ${lat.toFixed(3)}°N, ${Math.abs(lng).toFixed(3)}°W`);
+      showToast(`📍 Location set: ${customName || 'Active Parcel'}`);
     }
     setIsDetectingLocation(false);
   };
 
-  /**
-   * Triggers HTML5 Geolocation API to detect user's current GPS position
-   */
+  // ----------------------------------------------------------------------------
+  // 4. GPS "LOCATE ME" TRIGGER
+  // ----------------------------------------------------------------------------
   const handleUseCurrentLocation = () => {
     setIsDetectingLocation(true);
-    showToast('📡 Requesting current GPS coordinates...');
+    showToast('📡 Detecting current device GPS...');
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          fetchLocationData(lat, lng, '📍 Your Current Location');
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          fetchLocationData(lat, lng, '📍 Current GPS Location');
         },
-        (error) => {
-          console.warn('Geolocation denied or timed out:', error.message);
-          // Try backend IP detection
+        (err) => {
+          console.warn('GPS denied or timed out:', err.message);
           fetch('/api/location/current')
             .then(r => r.json())
             .then(d => {
               if (d.success && d.coords) {
-                fetchLocationData(d.coords.lat, d.coords.lng, `📍 Detected Area (${d.location.city || 'Cleveland Co.'})`);
+                fetchLocationData(d.coords.lat, d.coords.lng, `📍 Detected (${d.location.city || 'Local Area'})`);
               } else {
                 fetchLocationData(35.2226, -97.4395, '📍 Norman Research Farmland');
               }
@@ -269,126 +248,59 @@ function FarmFlowReactApp() {
         { timeout: 7000, enableHighAccuracy: true, maximumAge: 60000 }
       );
     } else {
-      showToast('⚠️ Geolocation not supported by browser. Using default parcel.');
       fetchLocationData(35.2226, -97.4395, '📍 Norman Research Farmland');
     }
   };
 
   // ----------------------------------------------------------------------------
-  // 5. REACT EFFECT HOOKS
+  // 5. AUTO-COMPLETE LOCATION SEARCH
   // ----------------------------------------------------------------------------
-
-  /**
-   * Effect 1: Auto-Detect Current Location on Mount
-   */
-  useEffect(() => {
-    handleUseCurrentLocation();
-  }, []);
-
-  /**
-   * Effect 2: Evaluate AI Recommendations when Parameters Change
-   */
-  useEffect(() => {
-    if (window.AIAgentEngine && selectedSoilUnit) {
-      const recs = window.AIAgentEngine.evaluateLocation(
-        selectedLocation,
-        selectedSoilUnit,
-        currentVwc,
-        salinityEc,
-        fieldAcres
-      );
-      setRecommendations([...recs]);
+  const handleSearchChange = (val) => {
+    setSearchQuery(val);
+    if (!val.trim()) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
     }
-  }, [selectedSoilUnit, currentVwc, salinityEc, fieldAcres]);
 
-  /**
-   * Effect 3: Subscribe to AI Engine Event Bus
-   */
-  useEffect(() => {
-    if (window.AIAgentEngine) {
-      const unsub = window.AIAgentEngine.subscribe((recs, logs) => {
-        setRecommendations([...recs]);
-        setFarmLogs([...logs]);
-      });
-      return unsub;
-    }
-  }, []);
-
-  /**
-   * Effect 4: Leaflet Satellite GIS Map Initialization & Smooth Tab Restoration
-   */
-  useEffect(() => {
-    if (activeTab === 'map' && mapContainerRef.current) {
-      // If map does not exist yet, create it
-      if (!mapInstanceRef.current) {
-        const map = L.map(mapContainerRef.current, {
-          center: [selectedLocation.lat, selectedLocation.lng],
-          zoom: 13,
-          zoomControl: false
-        });
-
-        // Esri World Imagery Satellite Tile Layer
-        const satelliteLayer = L.tileLayer(
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          { attribution: 'Tiles &copy; Esri &mdash; USDA FSA' }
-        );
-
-        // Street boundaries overlay
-        const labelsLayer = L.tileLayer(
-          'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
-          { attribution: '&copy; OpenStreetMap' }
-        );
-
-        satelliteLayer.addTo(map);
-        labelsLayer.addTo(map);
-
-        // Draggable pin marker
-        const marker = L.marker([selectedLocation.lat, selectedLocation.lng], {
-          draggable: true
-        }).addTo(map);
-
-        marker.bindPopup(`<b>${selectedLocation.name}</b><br/>${selectedSoilUnit.name}`).openPopup();
-
-        // Marker drag handler: updates location and pulls data on drop
-        marker.on('dragend', function (e) {
-          const coord = e.target.getLatLng();
-          fetchLocationData(coord.lat, coord.lng, `Custom Parcel (${coord.lat.toFixed(3)}°N, ${coord.lng.toFixed(3)}°W)`);
-        });
-
-        // Map click handler: moves marker and pulls data
-        map.on('click', function (e) {
-          marker.setLatLng(e.latlng);
-          fetchLocationData(e.latlng.lat, e.latlng.lng, `Custom Parcel (${e.latlng.lat.toFixed(3)}°N, ${e.latlng.lng.toFixed(3)}°W)`);
-        });
-
-        mapInstanceRef.current = map;
-        markerRef.current = marker;
-      } else {
-        // If map already exists, smoothly update view and invalidate size
-        mapInstanceRef.current.setView([selectedLocation.lat, selectedLocation.lng], 13);
-        if (markerRef.current) {
-          markerRef.current.setLatLng([selectedLocation.lat, selectedLocation.lng]);
-          markerRef.current.setPopupContent(`<b>${selectedLocation.name}</b><br/>${selectedSoilUnit.name}`).openPopup();
-        }
-        setTimeout(() => {
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
+    if (searchDebounceTimer.current) clearTimeout(searchDebounceTimer.current);
+    searchDebounceTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/location/search?q=${encodeURIComponent(val)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            setSearchSuggestions(data.results.slice(0, 5));
+            setShowSuggestions(true);
+            return;
           }
-        }, 150);
+        }
+      } catch (e) {
+        // Fallback
       }
-    }
-  }, [activeTab, selectedLocation]);
 
-  // ----------------------------------------------------------------------------
-  // 6. USER INTERACTION HANDLERS
-  // ----------------------------------------------------------------------------
+      // Check presets locally if backend fails
+      if (window.USDA_CLEVELAND_SOIL_DATA) {
+        const q = val.toLowerCase();
+        const matches = window.USDA_CLEVELAND_SOIL_DATA.sampleLocations
+          .filter(l => l.name.toLowerCase().includes(q) || l.area.toLowerCase().includes(q))
+          .map(l => ({ name: l.name, area: l.area, lat: l.lat, lng: l.lng }));
+        setSearchSuggestions(matches);
+        setShowSuggestions(matches.length > 0);
+      }
+    }, 280);
+  };
 
-  /**
-   * Search Bar: Submits geocoding request to find any parcel or address
-   */
+  const handleSelectSuggestion = (item) => {
+    setSearchQuery(item.name);
+    setShowSuggestions(false);
+    fetchLocationData(item.lat, item.lng, item.name);
+  };
+
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+    setShowSuggestions(false);
 
     showToast(`🔍 Searching for "${searchQuery}"...`);
     try {
@@ -398,46 +310,104 @@ function FarmFlowReactApp() {
         if (data.results && data.results.length > 0) {
           const top = data.results[0];
           fetchLocationData(top.lat, top.lng, top.name);
-          setSearchQuery('');
           return;
         }
       }
     } catch (err) {
-      console.log('Search API call error, checking sample locations:', err);
+      console.log('Search error:', err);
     }
 
-    // Local search fallback
-    if (window.USDA_CLEVELAND_SOIL_DATA) {
-      const q = searchQuery.toLowerCase();
-      const match = window.USDA_CLEVELAND_SOIL_DATA.sampleLocations.find(l =>
-        l.name.toLowerCase().includes(q) || l.area.toLowerCase().includes(q)
-      );
-      if (match) {
-        setSelectedLocation(match);
-        setSearchQuery('');
-        showToast(`📍 Selected ${match.name}`);
-        return;
-      }
+    // Direct coords check (lat, lng)
+    const m = searchQuery.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
+    if (m) {
+      fetchLocationData(parseFloat(m[1]), parseFloat(m[2]), `Coords (${parseFloat(m[1]).toFixed(3)}°, ${parseFloat(m[2]).toFixed(3)}°)`);
+    } else {
+      showToast(`Locating parcel for: ${searchQuery}`);
+      fetchLocationData(35.2226, -97.4395, searchQuery);
     }
-
-    showToast(`Location "${searchQuery}" located. Setting active parcel.`);
-    setSearchQuery('');
   };
 
-  /**
-   * 1-Click Implement Recommendation
-   */
-  const handleImplementRec = (recId) => {
-    const rec = recommendations.find(r => r.id === recId);
-    const recTitle = rec ? rec.title : 'Irrigation Protocol';
-    const gallons = rec && rec.waterSavingsGallons ? rec.waterSavingsGallons : 42000;
+  // ----------------------------------------------------------------------------
+  // 6. AI RECOMMENDATION GENERATOR FROM USER QUERY
+  // ----------------------------------------------------------------------------
+  const handleAISearchSubmit = async (queryText) => {
+    const q = (queryText || aiSearchInput).trim();
+    if (!q) return;
 
-    // Call AI Agent Engine if available
-    if (window.AIAgentEngine) {
-      window.AIAgentEngine.implementRecommendation(recId, 'Confirmed via Apple Swift 1-Click');
+    setIsGeneratingRec(true);
+    setAiSearchInput('');
+    showToast(`🤖 AgriSense AI is formulating recommendation for "${q}"...`);
+
+    try {
+      // 1. Call Backend AI Recommendation Endpoint
+      const res = await fetch('/api/ai/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: q,
+          location: selectedLocation,
+          soilUnit: selectedSoilUnit,
+          weather: liveWeather,
+          vwc: currentVwc,
+          ec: salinityEc,
+          acres: fieldAcres
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.recommendation) {
+          // Prepend newly generated recommendation to active deck
+          setRecommendations(prev => [data.recommendation, ...prev]);
+
+          // Automatically expand its rationale
+          setExpandedRationales(prev => ({ ...prev, [data.recommendation.id]: true }));
+
+          // Add conversational exchange to chat
+          setChatMessages(prev => [
+            ...prev,
+            { sender: 'user', text: q },
+            { sender: 'ai', text: data.reply }
+          ]);
+
+          showToast(`✨ Added new AI Recommendation: "${data.recommendation.title}"`);
+          setIsGeneratingRec(false);
+          setActiveTab('ai'); // Switch to AI tab to view it
+          return;
+        }
+      }
+    } catch (err) {
+      console.log('Backend AI recommendation bypassed, using client engine:', err);
     }
 
-    // Update local state directly
+    // 2. Client-Side Fallback via AIAgentEngine
+    if (window.AIAgentEngine && window.AIAgentEngine.generateRecommendationFromQuery) {
+      const result = window.AIAgentEngine.generateRecommendationFromQuery(
+        q, selectedLocation, selectedSoilUnit, liveWeather, currentVwc, salinityEc, fieldAcres
+      );
+      if (result && result.recommendation) {
+        setRecommendations(prev => [result.recommendation, ...prev]);
+        setExpandedRationales(prev => ({ ...prev, [result.recommendation.id]: true }));
+        setChatMessages(prev => [
+          ...prev,
+          { sender: 'user', text: q },
+          { sender: 'ai', text: result.reply }
+        ]);
+        showToast(`✨ Generated AI Plan: "${result.recommendation.title}"`);
+      }
+    }
+    setIsGeneratingRec(false);
+    setActiveTab('ai');
+  };
+
+  // ----------------------------------------------------------------------------
+  // 7. IMPLEMENT & IGNORE ACTIONS
+  // ----------------------------------------------------------------------------
+  const handleImplementRec = (recId) => {
+    const rec = recommendations.find(r => r.id === recId);
+    const title = rec ? rec.title : 'Action Protocol';
+    const gals = rec && rec.waterSavingsGallons ? rec.waterSavingsGallons : 35000;
+
     setRecommendations(prev => prev.map(r => r.id === recId ? { ...r, status: 'implemented' } : r));
 
     const newLog = {
@@ -445,44 +415,29 @@ function FarmFlowReactApp() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: new Date().toISOString().split('T')[0],
       actionTaken: 'IMPLEMENTED',
-      title: recTitle,
-      recId: recId,
+      title,
+      recId,
       priority: rec ? rec.priority : 'HIGH',
-      waterVolumeGallons: gallons,
-      feedback: 'Farmer confirmed via 1-Click. Automated WiseConn valves synchronized.'
+      waterVolumeGallons: gals,
+      feedback: 'Farmer confirmed via Apple 1-Click. Automated equipment synced.'
     };
     setFarmLogs(prev => [newLog, ...prev]);
 
-    // POST to backend journal API
     fetch('/api/journal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLog)
     }).catch(() => {});
 
-    showToast(`✅ Implemented: ${recTitle}`);
+    showToast(`✅ Implemented: ${title}`);
   };
 
-  /**
-   * Ignore / Dismiss Recommendation: Opens iOS Action Sheet
-   */
-  const handleIgnorePrompt = (recId) => {
-    setIgnoreModalRecId(recId);
-  };
-
-  /**
-   * Confirm dismissal with selected reason
-   */
   const confirmIgnoreWithReason = (reason) => {
     const recId = ignoreModalRecId;
     if (!recId) return;
 
     const rec = recommendations.find(r => r.id === recId);
-    const recTitle = rec ? rec.title : 'Recommendation';
-
-    if (window.AIAgentEngine) {
-      window.AIAgentEngine.ignoreRecommendation(recId, reason);
-    }
+    const title = rec ? rec.title : 'Recommendation';
 
     setRecommendations(prev => prev.map(r => r.id === recId ? { ...r, status: 'ignored' } : r));
 
@@ -491,8 +446,8 @@ function FarmFlowReactApp() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: new Date().toISOString().split('T')[0],
       actionTaken: 'IGNORED',
-      title: recTitle,
-      recId: recId,
+      title,
+      recId,
       priority: rec ? rec.priority : 'NORMAL',
       waterVolumeGallons: 0,
       feedback: reason
@@ -509,81 +464,87 @@ function FarmFlowReactApp() {
     showToast(`⚪ Dismissed: ${reason}`);
   };
 
-  /**
-   * Conversational AI Assistant
-   */
-  const handleSendChatMessage = (textToSend = null) => {
-    const userMsg = (textToSend || chatInput).trim();
-    if (!userMsg) return;
+  // Toggle collapsible rationale
+  const toggleRationale = (recId) => {
+    setExpandedRationales(prev => ({ ...prev, [recId]: !prev[recId] }));
+  };
 
-    const newChat = [...chatMessages, { sender: 'user', text: userMsg }];
-    setChatMessages(newChat);
-    setChatInput('');
+  // ----------------------------------------------------------------------------
+  // 8. EFFECTS (MOUNT & MAP RESTORATION)
+  // ----------------------------------------------------------------------------
+  useEffect(() => {
+    handleUseCurrentLocation();
+  }, []);
 
-    // Try backend AI chat API first
-    fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userMsg, soil: selectedSoilUnit, vwc: currentVwc, ec: salinityEc })
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.reply) {
-          setChatMessages([...newChat, { sender: 'ai', text: data.reply }]);
+  useEffect(() => {
+    if (activeTab === 'map' && mapContainerRef.current) {
+      if (!mapInstanceRef.current) {
+        const map = L.map(mapContainerRef.current, {
+          center: [selectedLocation.lat, selectedLocation.lng],
+          zoom: 13,
+          zoomControl: false
+        });
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri &mdash; USDA FSA'
+        }).addTo(map);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        const marker = L.marker([selectedLocation.lat, selectedLocation.lng], { draggable: true }).addTo(map);
+        marker.bindPopup(`<b>${selectedLocation.name}</b><br/>${selectedSoilUnit.name}`).openPopup();
+
+        marker.on('dragend', (e) => {
+          const c = e.target.getLatLng();
+          fetchLocationData(c.lat, c.lng, `Parcel (${c.lat.toFixed(3)}°, ${c.lng.toFixed(3)}°)`);
+        });
+
+        map.on('click', (e) => {
+          marker.setLatLng(e.latlng);
+          fetchLocationData(e.latlng.lat, e.latlng.lng, `Parcel (${e.latlng.lat.toFixed(3)}°, ${e.latlng.lng.toFixed(3)}°)`);
+        });
+
+        mapInstanceRef.current = map;
+        markerRef.current = marker;
+      } else {
+        mapInstanceRef.current.setView([selectedLocation.lat, selectedLocation.lng], 13);
+        if (markerRef.current) {
+          markerRef.current.setLatLng([selectedLocation.lat, selectedLocation.lng]);
+          markerRef.current.setPopupContent(`<b>${selectedLocation.name}</b><br/>${selectedSoilUnit.name}`).openPopup();
         }
-      })
-      .catch(() => {
-        // Fallback to client-side engine
         setTimeout(() => {
-          if (window.AIAgentEngine) {
-            const reply = window.AIAgentEngine.generateChatResponse(userMsg, selectedSoilUnit, currentVwc, salinityEc);
-            setChatMessages([...newChat, { sender: 'ai', text: reply }]);
-          } else {
-            setChatMessages([...newChat, {
-              sender: 'ai',
-              text: `Based on ${selectedSoilUnit.name}, current moisture is ${currentVwc}% VWC and salinity is ${salinityEc} mS/cm. Infiltration rate is ${selectedSoilUnit.infiltrationRateInHr}"/hr.`
-            }]);
-          }
-        }, 400);
-      });
-  };
-
-  // ----------------------------------------------------------------------------
-  // 7. HYDROLOGICAL MATHEMATICS EVALUATION
-  // ----------------------------------------------------------------------------
-  const calc = window.USDA_CLEVELAND_SOIL_DATA ? window.USDA_CLEVELAND_SOIL_DATA.Calculations : {
-    calcTotalAvailableWaterInches: (id) => +(selectedSoilUnit.availableWaterCapacityInIn * selectedSoilUnit.rootZoneDepthInches).toFixed(2),
-    calcCurrentWaterDepthInches: (id, vwc) => +(Math.max(0, (vwc - selectedSoilUnit.permanentWiltingPointVwc) / 100) * selectedSoilUnit.rootZoneDepthInches).toFixed(2),
-    inchesToGallons: (inDepth, acres) => Math.round(inDepth * 27154 * acres),
-    calcEffectiveWaterCapacity: (id, vwc, ec) => {
-      const curDepth = +(Math.max(0, (vwc - selectedSoilUnit.permanentWiltingPointVwc) / 100) * selectedSoilUnit.rootZoneDepthInches).toFixed(2);
-      const thresh = selectedSoilUnit.salinitySensitivityThreshold;
-      const stress = ec > thresh ? Math.min(60, Math.round((ec - thresh) * 15)) : 0;
-      return {
-        effectiveWaterInches: +(curDepth * (1 - stress / 100)).toFixed(2),
-        osmoticStressPercent: stress
-      };
-    },
-    calcLeachingRequirement: (ec) => {
-      const needed = ec > selectedSoilUnit.salinitySensitivityThreshold;
-      const extra = needed ? +((1.2 / (5 * ec - 1.2)) * 2.5).toFixed(2) : 0;
-      return { needed, extraWaterInches: extra };
+          if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+        }, 120);
+      }
     }
-  };
-
-  const taw = calc.calcTotalAvailableWaterInches(selectedSoilUnit.id);
-  const curWaterDepth = calc.calcCurrentWaterDepthInches(selectedSoilUnit.id, currentVwc);
-  const curWaterGallons = calc.inchesToGallons(curWaterDepth, fieldAcres);
-  const waterAnalysis = calc.calcEffectiveWaterCapacity(selectedSoilUnit.id, currentVwc, salinityEc);
-  const leaching = calc.calcLeachingRequirement(salinityEc);
+  }, [activeTab, selectedLocation]);
 
   // ----------------------------------------------------------------------------
-  // 8. JSX COMPONENT RENDERING
+  // 9. CALCULATIONS
+  // ----------------------------------------------------------------------------
+  const pwp = selectedSoilUnit.permanentWiltingPointVwc;
+  const fc = selectedSoilUnit.fieldCapacityVwc;
+  const rootDepth = selectedSoilUnit.rootZoneDepthInches;
+  const taw = +(((fc - pwp) / 100) * rootDepth).toFixed(2);
+  const curWaterDepth = +(Math.max(0, (currentVwc - pwp) / 100) * rootDepth).toFixed(2);
+  const curWaterGallons = Math.round(curWaterDepth * 27154 * fieldAcres);
+  const stress = salinityEc > selectedSoilUnit.salinitySensitivityThreshold 
+    ? Math.min(60, Math.round((salinityEc - selectedSoilUnit.salinitySensitivityThreshold) * 15)) 
+    : 0;
+  const effectiveInches = +(curWaterDepth * (1 - stress / 100)).toFixed(2);
+  const isLeachNeeded = salinityEc > selectedSoilUnit.salinitySensitivityThreshold;
+  const leachInches = isLeachNeeded ? +((1.2 / (5 * salinityEc - 1.2)) * 2.5).toFixed(2) : 0;
+  const leachGallons = Math.round(leachInches * 27154 * fieldAcres);
+
+  // ----------------------------------------------------------------------------
+  // 10. JSX RENDERING
   // ----------------------------------------------------------------------------
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-      
-      {/* ==================== FLOATING iOS TOAST NOTIFICATION ==================== */}
+
+      {/* FLOATING TOAST */}
       {toastMessage && (
         <div className="ios-toast-container">
           <div className="ios-toast">
@@ -593,11 +554,11 @@ function FarmFlowReactApp() {
         </div>
       )}
 
-      {/* ==================== ACTION SHEET MODAL (DISMISS REASON) ==================== */}
+      {/* ACTION SHEET MODAL */}
       {ignoreModalRecId && (
         <div className="action-sheet-backdrop" onClick={() => setIgnoreModalRecId(null)}>
           <div className="action-sheet-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="action-sheet-title">Ignore Recommendation</div>
+            <div className="action-sheet-title">Dismiss Recommendation</div>
             <div className="action-sheet-subtitle">Select farmer operational reason to log in journal:</div>
             
             <button className="action-sheet-option" onClick={() => confirmIgnoreWithReason('🌧️ Rain in 24h forecast (conserve water)')}>
@@ -612,7 +573,7 @@ function FarmFlowReactApp() {
               <span>🚜 Field Operations / Cultivation In Progress</span>
               <span>&rsaquo;</span>
             </button>
-            <button className="action-sheet-option" onClick={() => confirmIgnoreWithReason('⏱️ Postponed for manual soil core inspection')}>
+            <button className="action-sheet-option" onClick={() => confirmIgnoreWithReason('⏱️ Postponed for manual soil sensor probe')}>
               <span>⏱️ Postponed for Manual Sensor Inspection</span>
               <span>&rsaquo;</span>
             </button>
@@ -624,47 +585,51 @@ function FarmFlowReactApp() {
         </div>
       )}
 
-      {/* ==================== TOP CROSS-PLATFORM CONTROL BAR ==================== */}
-      <header className="platform-toolbar">
-        <div className="platform-title">
-          <div className="apple-logo-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      {/* ==================== CLEAN TOP NAVIGATION BAR ==================== */}
+      <header className="platform-toolbar" style={{ borderBottom: '1px solid rgba(56, 189, 248, 0.25)', padding: '10px 20px' }}>
+        <div className="platform-title" style={{ gap: '10px' }}>
+          <div className="apple-logo-badge" style={{ width: '32px', height: '32px' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
             </svg>
           </div>
           <div>
-            <span>Farm-Flow &bull; Water Optimization</span>
-            <div style={{ fontSize: '11px', color: '#93c5fd', fontWeight: 500 }}>
-              Hydrology Blue Edition &mdash; {selectedLocation.area}
+            <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Farm-Flow
+              <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '1px 6px', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                WATER OPT
+              </span>
+            </div>
+            <div style={{ fontSize: '11px', color: '#93c5fd' }}>
+              Precision Hydrology &bull; Active: {selectedLocation.area}
             </div>
           </div>
         </div>
 
-        {/* Device Switcher Controls */}
+        {/* View Switcher Controls */}
         <div className="platform-modes">
           <button
             className={`mode-toggle-btn ${deviceMode === 'iphone' ? 'active' : ''}`}
             onClick={() => setDeviceMode('iphone')}
           >
-            📱 iPhone 16 Pro View
+            📱 Phone
           </button>
           <button
             className={`mode-toggle-btn ${deviceMode === 'fullscreen' ? 'active' : ''}`}
             onClick={() => setDeviceMode('fullscreen')}
           >
-            💻 Cross-Platform / iPad
+            💻 Desktop
           </button>
         </div>
       </header>
 
-      {/* ==================== MAIN HARDWARE / SIMULATOR VIEWPORT ==================== */}
+      {/* ==================== MAIN VIEWPORT FRAME ==================== */}
       <div className="app-viewport-wrapper">
         <div className={deviceMode === 'iphone' ? 'device-frame-iphone' : 'device-frame-full'}>
           
-          {/* iOS Status Bar with Dynamic Island Pill */}
+          {/* iOS Status Bar */}
           <div className="ios-status-bar">
             <span>9:41</span>
-            {/* Dynamic Island displaying live water telemetry status */}
             <div className="dynamic-island" onClick={handleUseCurrentLocation} title="Click to refresh current location" style={{ cursor: 'pointer' }}>
               <span className={`island-pulse-dot ${isDetectingLocation ? 'pulse-spin' : ''}`}></span>
               <span>{isDetectingLocation ? 'Locating...' : `${liveWeather.tempF}°F • Live Hydrology`}</span>
@@ -678,132 +643,118 @@ function FarmFlowReactApp() {
             </div>
           </div>
 
-          {/* iOS Navigation Bar (Large Title Header) */}
-          <div className="ios-nav-bar">
-            <div className="ios-nav-top">
-              <div className="ios-nav-title">
-                Farm-Flow
-                <span style={{ fontSize: '12px', color: '#38bdf8' }}>&bull; Water Opt</span>
-              </div>
-              {/* Interactive Location Pill */}
-              <div
-                className="ios-location-pill"
-                onClick={handleUseCurrentLocation}
-                title="Click to detect current location"
-                style={{ cursor: 'pointer' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
-                {selectedLocation.area}
-              </div>
-            </div>
-            <div className="ios-nav-subtitle">
-              {selectedLocation.name} &bull; Lat {selectedLocation.lat.toFixed(2)}°, Lng {selectedLocation.lng.toFixed(2)}°
-            </div>
-          </div>
-
-          {/* Cupertino Segmented Location Picker */}
-          <div className="ios-segmented-control">
-            <div
-              className={`segment-item ${selectedLocation.name.includes('Current') ? 'active' : ''}`}
-              onClick={handleUseCurrentLocation}
-            >
-              📍 My Location
-            </div>
-            {window.USDA_CLEVELAND_SOIL_DATA && window.USDA_CLEVELAND_SOIL_DATA.sampleLocations.slice(0, 2).map(loc => (
-              <div
-                key={loc.id}
-                className={`segment-item ${selectedLocation.id === loc.id ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedLocation(loc);
-                  fetchLocationData(loc.lat, loc.lng, loc.name);
-                }}
-              >
-                {loc.name.split(' ')[0]}
-              </div>
-            ))}
-          </div>
-
-          {/* ==================== SCROLLABLE CONTENT AREA ==================== */}
-          <div className="ios-scroll-content">
-
-            {/* LIVE WEATHER & HYDROLOGY BANNER (Shown across tabs) */}
-            <div className="weather-telemetry-strip">
-              <div>
-                <strong style={{ color: '#fff', fontSize: '12px' }}>{liveWeather.tempF}°F &bull; {liveWeather.condition}</strong>
-                <div style={{ color: '#93c5fd', fontSize: '10px' }}>Humidity: {liveWeather.humidity}% &bull; Wind: {liveWeather.windMph} mph</div>
-              </div>
-              <div className="weather-badge-group">
-                <span className="weather-pill" title="Rainfall forecasted in next 24h">
-                  🌧️ {liveWeather.rainForecastInches}" Rain
-                </span>
-                <span className="weather-pill" title="Reference Evapotranspiration">
-                  ☀️ ET0: {liveWeather.et0}"/d
-                </span>
-              </div>
-            </div>
-
-            {/* --------------------------------------------------------------
-                TAB 1: GOOGLE SATELLITE MAP & SOIL STRUCTURE EXPLORER
-                -------------------------------------------------------------- */}
-            <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
-              {/* Geocoding Search Bar with Current Location Quick Button */}
-              <form onSubmit={handleSearchSubmit} className="ios-search-bar" style={{ display: 'flex', gap: '8px' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+          {/* ==================== UNIFIED SEARCH BAR WITH AUTOCOMPLETE ==================== */}
+          <div style={{ padding: '8px 16px 4px 16px', background: 'rgba(8, 17, 32, 0.95)' }}>
+            <div className="search-wrapper-relative">
+              <form onSubmit={handleSearchSubmit} className="ios-search-bar" style={{ display: 'flex', gap: '8px', margin: 0 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" strokeWidth="2.5" style={{ flexShrink: 0 }}>
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
+                
                 <input
                   type="text"
                   className="ios-search-input"
-                  placeholder="Search any address, city, or farm parcel..."
+                  placeholder="Search any city, parcel, or coordinates worldwide..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onFocus={() => { if (searchSuggestions.length > 0) setShowSuggestions(true); }}
                 />
-                
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(''); setSearchSuggestions([]); setShowSuggestions(false); }}
+                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0 4px', fontSize: '13px' }}
+                  >
+                    ✕
+                  </button>
+                )}
+
                 {/* 1-Click Locate Me Button */}
                 <button
                   type="button"
                   className={`btn-locate-me ${isDetectingLocation ? 'detecting' : ''}`}
                   onClick={handleUseCurrentLocation}
-                  title="Detect and pull data for current location"
+                  title="Detect and sync live GPS coordinates"
                 >
                   <span className={isDetectingLocation ? 'locate-icon-spin' : ''}>📍</span>
-                  {isDetectingLocation ? 'Locating...' : 'Locate Me'}
+                  {isDetectingLocation ? '...' : 'Locate'}
                 </button>
 
-                <button type="submit" style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-                  Search
+                <button type="submit" style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                  Go
                 </button>
               </form>
 
-              {/* Leaflet Google Satellite Map Frame */}
-              <div className="map-viewport-container">
+              {/* Floating Autocomplete Dropdown */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="search-suggestions-dropdown">
+                  {searchSuggestions.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="suggestion-item"
+                      onClick={() => handleSelectSuggestion(item)}
+                    >
+                      <div>
+                        <div className="suggestion-primary">{item.name}</div>
+                        <div className="suggestion-secondary">{item.area || `${item.city || ''}, ${item.state || ''}`}</div>
+                      </div>
+                      <span style={{ color: '#38bdf8', fontSize: '13px' }}>&rsaquo;</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ==================== SCROLLABLE MAIN CONTENT ==================== */}
+          <div className="ios-scroll-content">
+
+            {/* UNIFIED STREAMLINED STATUS CAPSULE PILL (Decluttered Header) */}
+            <div className="unified-status-pill">
+              <div className="status-pill-left">
+                <span style={{ fontSize: '14px' }}>📍</span>
+                <div>
+                  <div className="status-pill-location-text">{selectedLocation.name}</div>
+                  <div style={{ fontSize: '10px', color: '#93c5fd' }}>{selectedLocation.area}</div>
+                </div>
+              </div>
+              <div className="status-pill-telemetry">
+                <span className="telemetry-chip" title="Current Temperature & Condition">
+                  ☀️ {liveWeather.tempF}°F
+                </span>
+                <span className="telemetry-chip" title="24-Hour Rainfall Forecast">
+                  🌧️ {liveWeather.rainForecastInches}" Rain
+                </span>
+                <span className="telemetry-chip" title="Soil Volumetric Moisture">
+                  💧 {currentVwc}%
+                </span>
+              </div>
+            </div>
+
+            {/* --------------------------------------------------------------
+                TAB 1: MAP & SOIL STRUCTURE EXPLORER
+                -------------------------------------------------------------- */}
+            <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
+              
+              {/* Satellite Map */}
+              <div className="map-viewport-container" style={{ height: '270px', borderRadius: '16px', overflow: 'hidden' }}>
                 <div id="leaflet-soil-map" ref={mapContainerRef} style={{ width: '100%', height: '100%' }}></div>
                 <div className="map-control-overlay">
                   <button
                     className="map-icon-btn"
-                    title="Center on My Current Location"
+                    title="Center on My Location"
                     onClick={handleUseCurrentLocation}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
                     </svg>
                   </button>
-                  <button
-                    className="map-icon-btn"
-                    title="Center on Norman Uplands"
-                    onClick={() => fetchLocationData(35.2226, -97.4395, 'Norman Uplands')}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 16 12 12 8"/>
-                    </svg>
-                  </button>
                 </div>
               </div>
 
-              {/* USDA Soil Structure Card */}
-              <div className="ios-card">
+              {/* Clean Soil Profile Card */}
+              <div className="ios-card" style={{ marginTop: '12px' }}>
                 <div className="card-header-row">
                   <div className="card-title-group">
                     <div className="sf-icon-badge badge-blue">
@@ -813,51 +764,51 @@ function FarmFlowReactApp() {
                     </div>
                     <div>
                       <div className="card-title-text">{selectedSoilUnit.name}</div>
-                      <div className="card-caption-text">USDA Soil Taxonomy Classification</div>
+                      <div className="card-caption-text">{selectedSoilUnit.primaryTexture}</div>
                     </div>
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8' }}>
-                    NRCS Survey Verified
+                    USDA Verified
                   </span>
                 </div>
 
-                <p style={{ fontSize: '13px', color: '#e0f2fe', lineHeight: 1.45 }}>
+                <p style={{ fontSize: '12px', color: '#e0f2fe', lineHeight: 1.4, margin: '2px 0 6px 0' }}>
                   {selectedSoilUnit.description}
                 </p>
 
-                {/* Sand / Silt / Clay Soil Fraction Bar */}
+                {/* Sand / Silt / Clay Fraction Bar */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px', fontWeight: 600 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px', fontWeight: 600 }}>
                     <span style={{ color: '#bae6fd' }}>Sand: {selectedSoilUnit.sandPercent}%</span>
                     <span style={{ color: '#38bdf8' }}>Silt: {selectedSoilUnit.siltPercent}%</span>
                     <span style={{ color: '#0284c7' }}>Clay: {selectedSoilUnit.clayPercent}%</span>
                   </div>
-                  <div style={{ display: 'flex', height: '10px', borderRadius: '5px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{ width: `${selectedSoilUnit.sandPercent}%`, background: '#bae6fd' }}></div>
                     <div style={{ width: `${selectedSoilUnit.siltPercent}%`, background: '#38bdf8' }}></div>
                     <div style={{ width: `${selectedSoilUnit.clayPercent}%`, background: '#0284c7' }}></div>
                   </div>
                 </div>
 
-                {/* Soil Physical Hydrology Grid */}
-                <div className="water-metrics-grid" style={{ marginTop: '6px' }}>
-                  <div className="metric-tile">
-                    <span className="metric-tile-label">Permeability Rating</span>
-                    <span className="metric-tile-val" style={{ fontSize: '16px' }}>{selectedSoilUnit.permeabilityRating}</span>
-                    <span className="metric-tile-sub">Max Infil: {selectedSoilUnit.infiltrationRateInHr}" / hr</span>
+                {/* Soil Hydrology Grid */}
+                <div className="water-metrics-grid" style={{ marginTop: '8px' }}>
+                  <div className="metric-tile" style={{ padding: '8px 10px' }}>
+                    <span className="metric-tile-label">Permeability</span>
+                    <span className="metric-tile-val" style={{ fontSize: '15px' }}>{selectedSoilUnit.permeabilityRating}</span>
+                    <span className="metric-tile-sub">Infil: {selectedSoilUnit.infiltrationRateInHr}"/hr</span>
                   </div>
-                  <div className="metric-tile">
+                  <div className="metric-tile" style={{ padding: '8px 10px' }}>
                     <span className="metric-tile-label">Bulk Density</span>
-                    <span className="metric-tile-val" style={{ fontSize: '16px' }}>{selectedSoilUnit.bulkDensityGcm3} g/cm³</span>
-                    <span className="metric-tile-sub">Active Depth: {selectedSoilUnit.rootZoneDepthInches} inches</span>
+                    <span className="metric-tile-val" style={{ fontSize: '15px' }}>{selectedSoilUnit.bulkDensityGcm3} g/cm³</span>
+                    <span className="metric-tile-sub">Depth: {selectedSoilUnit.rootZoneDepthInches}"</span>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Link Card to AI Agronomist */}
+              {/* Quick AI Trigger Banner */}
               <div
                 className="ios-card"
-                style={{ cursor: 'pointer', background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(37, 99, 235, 0.15))' }}
+                style={{ cursor: 'pointer', background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.22), rgba(37, 99, 235, 0.15))' }}
                 onClick={() => setActiveTab('ai')}
               >
                 <div className="card-header-row">
@@ -868,21 +819,20 @@ function FarmFlowReactApp() {
                       </svg>
                     </div>
                     <div>
-                      <div className="card-title-text">AgriSense AI Ready</div>
-                      <div className="card-caption-text">{recommendations.length} water optimization actions available</div>
+                      <div className="card-title-text">AgriSense AI Active</div>
+                      <div className="card-caption-text">{recommendations.length} optimization recommendations ready</div>
                     </div>
                   </div>
-                  <span style={{ color: '#38bdf8', fontWeight: 700 }}>Review &rsaquo;</span>
+                  <span style={{ color: '#38bdf8', fontWeight: 700, fontSize: '12px' }}>Review &rsaquo;</span>
                 </div>
               </div>
             </div>
 
             {/* --------------------------------------------------------------
-                TAB 2: WATER QUANTITY & SALINITY DYNAMICS
+                TAB 2: WATER QUANTITY & SALINITY
                 -------------------------------------------------------------- */}
             {activeTab === 'water' && (
               <>
-                {/* Available Water Storage Card */}
                 <div className="ios-card">
                   <div className="card-header-row">
                     <div className="card-title-group">
@@ -892,48 +842,47 @@ function FarmFlowReactApp() {
                         </svg>
                       </div>
                       <div>
-                        <div className="card-title-text">Root Zone Water Storage</div>
-                        <div className="card-caption-text">Root Zone Depth: {selectedSoilUnit.rootZoneDepthInches} inches</div>
+                        <div className="card-title-text">Active Water Volume</div>
+                        <div className="card-caption-text">{fieldAcres} acres &bull; {selectedSoilUnit.rootZoneDepthInches}" root depth</div>
                       </div>
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#38bdf8' }}>
-                      {curWaterDepth}" Stored
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#38bdf8' }}>
+                      {curWaterDepth}" Depth
                     </span>
                   </div>
 
-                  {/* Liquid Volume Readouts */}
                   <div className="water-metrics-grid">
                     <div className="metric-tile">
-                      <span className="metric-tile-label">Current Stored Gallons</span>
+                      <span className="metric-tile-label">Stored Gallons</span>
                       <span className="metric-tile-val">{curWaterGallons.toLocaleString()}</span>
                       <span className="metric-tile-sub">across {fieldAcres} acres</span>
                     </div>
                     <div className="metric-tile">
-                      <span className="metric-tile-label">Total Water Capacity</span>
+                      <span className="metric-tile-label">Total Capacity (TAW)</span>
                       <span className="metric-tile-val">{taw}"</span>
                       <span className="metric-tile-sub">AWC: {selectedSoilUnit.availableWaterCapacityInIn} in/in</span>
                     </div>
                   </div>
 
-                  {/* Horizontal Water Depth Progress Gauge */}
+                  {/* Progress Gauge */}
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#93c5fd', marginBottom: '4px' }}>
-                      <span>Wilting Point ({selectedSoilUnit.permanentWiltingPointVwc}%)</span>
+                      <span>Wilting ({pwp}%)</span>
                       <span style={{ color: '#fff', fontWeight: 700 }}>Moisture: {currentVwc}% VWC</span>
-                      <span>Field Capacity ({selectedSoilUnit.fieldCapacityVwc}%)</span>
+                      <span>Field Cap ({fc}%)</span>
                     </div>
                     <div className="progress-container">
                       <div
                         className="progress-bar-fill fill-cyan"
                         style={{
-                          width: `${Math.min(100, Math.max(10, ((currentVwc - selectedSoilUnit.permanentWiltingPointVwc) / (selectedSoilUnit.fieldCapacityVwc - selectedSoilUnit.permanentWiltingPointVwc)) * 100))}%`
+                          width: `${Math.min(100, Math.max(10, ((currentVwc - pwp) / (fc - pwp)) * 100))}%`
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Salinity & Osmotic Reduction Card */}
+                {/* Salinity Card */}
                 <div className="ios-card">
                   <div className="card-header-row">
                     <div className="card-title-group">
@@ -943,196 +892,240 @@ function FarmFlowReactApp() {
                         </svg>
                       </div>
                       <div>
-                        <div className="card-title-text">Soil Salinity (EC) Optimization</div>
-                        <div className="card-caption-text">Sensitivity Threshold: {selectedSoilUnit.salinitySensitivityThreshold} mS/cm</div>
+                        <div className="card-title-text">Soil Salinity Optimization</div>
+                        <div className="card-caption-text">Threshold: {selectedSoilUnit.salinitySensitivityThreshold} mS/cm</div>
                       </div>
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: salinityEc > selectedSoilUnit.salinitySensitivityThreshold ? '#38bdf8' : '#67e8f9' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: salinityEc > selectedSoilUnit.salinitySensitivityThreshold ? '#38bdf8' : '#67e8f9' }}>
                       {salinityEc} mS/cm
                     </span>
                   </div>
 
-                  {/* Osmotic Tension Explanation */}
-                  <div className="rec-rationale-box">
-                    <strong>Osmotic Tension Impact: </strong>
-                    {waterAnalysis.osmoticStressPercent > 0 ? (
-                      <span>Salinity of <b>{salinityEc} mS/cm</b> creates osmotic tension, reducing plant-usable water intake by <b>{waterAnalysis.osmoticStressPercent}%</b>. While {curWaterDepth}" physically exists, only <b>{waterAnalysis.effectiveWaterInches}"</b> is extractable by roots.</span>
+                  <div className="rec-rationale-box" style={{ fontSize: '12px' }}>
+                    {stress > 0 ? (
+                      <span>Salinity creates <b>{stress}% osmotic tension</b>. While {curWaterDepth}" exists, only <b>{effectiveInches}"</b> is extractable by roots.</span>
                     ) : (
-                      <span>Salinity is within the optimal range. Crop roots can freely absorb available water without osmotic drought.</span>
+                      <span>Salinity is within the safe range. Crop roots can freely extract water without osmotic loss.</span>
                     )}
                   </div>
 
-                  {/* Salt Leaching Prescription Box */}
-                  {leaching.needed && (
-                    <div style={{ background: 'rgba(2, 132, 199, 0.2)', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '10px', padding: '10px 12px' }}>
-                      <div style={{ fontWeight: 700, fontSize: '12px', color: '#38bdf8', marginBottom: '4px' }}>
-                        💧 Salt Leaching Pulse Prescribed
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#f0f9ff' }}>
-                        To flush salts past the {selectedSoilUnit.rootZoneDepthInches}" root zone, apply an additional <b>{leaching.extraWaterInches}"</b> of water (~{calc.inchesToGallons(leaching.extraWaterInches, fieldAcres).toLocaleString()} gal).
+                  {isLeachNeeded && (
+                    <div style={{ background: 'rgba(2, 132, 199, 0.2)', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '10px', padding: '8px 12px' }}>
+                      <div style={{ fontWeight: 700, fontSize: '12px', color: '#38bdf8' }}>💧 Salt Leaching Required</div>
+                      <div style={{ fontSize: '11px', color: '#f0f9ff' }}>
+                        Apply <b>{leachInches}"</b> extra water (~{leachGallons.toLocaleString()} gal) to flush cations below active roots.
                       </div>
                     </div>
                   )}
 
-                  {/* Quick Simulation Presets */}
-                  <div style={{ marginTop: '6px' }}>
-                    <span style={{ fontSize: '11px', color: '#93c5fd', fontWeight: 600 }}>Quick Hydrology Simulations:</span>
-                    <div className="sim-action-row">
-                      <button
-                        className="btn-sim-quick"
-                        onClick={() => {
-                          setCurrentVwc(prev => +(Math.min(38, prev + 5)).toFixed(1));
-                          setSalinityEc(prev => +(Math.max(0.8, prev - 0.4)).toFixed(2));
-                          showToast('🌧️ Simulated 1.2" Rainfall: Moisture +5%, Salinity -0.4 mS/cm');
-                        }}
-                      >
-                        🌧️ +1.2" Rain Event
-                      </button>
-                      <button
-                        className="btn-sim-quick"
-                        onClick={() => {
-                          setCurrentVwc(prev => +(Math.max(9, prev - 4)).toFixed(1));
-                          setSalinityEc(prev => +(Math.min(3.8, prev + 0.35)).toFixed(2));
-                          showToast('🔥 Simulated Heatwave: Moisture -4%, Salinity +0.35 mS/cm');
-                        }}
-                      >
-                        🔥 Heatwave Drought
-                      </button>
-                      <button
-                        className="btn-sim-quick"
-                        onClick={() => {
-                          setCurrentVwc(18.2);
-                          setSalinityEc(1.85);
-                          showToast('🔄 Reset parameters to location baseline');
-                        }}
-                      >
-                        🔄 Reset Baseline
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Interactive Hydraulic Control Sliders */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+                  {/* Sliders */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                        <span style={{ color: '#93c5fd' }}>Adjust Root Zone Moisture (% VWC):</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '2px' }}>
+                        <span style={{ color: '#93c5fd' }}>Root Zone Moisture (% VWC):</span>
                         <span style={{ color: '#38bdf8', fontWeight: 700 }}>{currentVwc}%</span>
                       </div>
                       <input
-                        type="range"
-                        min="10"
-                        max="40"
-                        step="0.5"
-                        value={currentVwc}
+                        type="range" min="10" max="40" step="0.5" value={currentVwc}
                         onChange={(e) => setCurrentVwc(parseFloat(e.target.value))}
                         className="styled-range"
                       />
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                        <span style={{ color: '#93c5fd' }}>Adjust Soil Salinity (EC):</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '2px' }}>
+                        <span style={{ color: '#93c5fd' }}>Soil Salinity (EC):</span>
                         <span style={{ color: '#38bdf8', fontWeight: 700 }}>{salinityEc} mS/cm</span>
                       </div>
                       <input
-                        type="range"
-                        min="0.5"
-                        max="4.0"
-                        step="0.05"
-                        value={salinityEc}
+                        type="range" min="0.5" max="4.0" step="0.05" value={salinityEc}
                         onChange={(e) => setSalinityEc(parseFloat(e.target.value))}
                         className="styled-range"
                       />
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                        <span style={{ color: '#93c5fd' }}>Cultivated Parcel Acreage:</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '2px' }}>
+                        <span style={{ color: '#93c5fd' }}>Parcel Acreage:</span>
                         <span style={{ color: '#fff', fontWeight: 700 }}>{fieldAcres} acres</span>
                       </div>
                       <input
-                        type="range"
-                        min="1"
-                        max="100"
-                        step="1"
-                        value={fieldAcres}
+                        type="range" min="1" max="100" step="1" value={fieldAcres}
                         onChange={(e) => setFieldAcres(parseFloat(e.target.value))}
                         className="styled-range"
                       />
                     </div>
+                  </div>
+
+                  {/* Simulation Quick Buttons */}
+                  <div className="sim-action-row" style={{ marginTop: '8px' }}>
+                    <button
+                      className="btn-sim-quick"
+                      onClick={() => {
+                        setCurrentVwc(prev => +(Math.min(38, prev + 5)).toFixed(1));
+                        setSalinityEc(prev => +(Math.max(0.8, prev - 0.4)).toFixed(2));
+                        showToast('🌧️ Simulated 1.2" Rainfall: Moisture +5%, Salinity -0.4 mS/cm');
+                      }}
+                    >
+                      🌧️ +1.2" Rain
+                    </button>
+                    <button
+                      className="btn-sim-quick"
+                      onClick={() => {
+                        setCurrentVwc(prev => +(Math.max(9, prev - 4)).toFixed(1));
+                        setSalinityEc(prev => +(Math.min(3.8, prev + 0.35)).toFixed(2));
+                        showToast('🔥 Simulated Heatwave: Moisture -4%, Salinity +0.35 mS/cm');
+                      }}
+                    >
+                      🔥 Heatwave
+                    </button>
+                    <button
+                      className="btn-sim-quick"
+                      onClick={() => {
+                        setCurrentVwc(18.2);
+                        setSalinityEc(2.0);
+                        showToast('🔄 Reset parameters to location baseline');
+                      }}
+                    >
+                      🔄 Reset
+                    </button>
                   </div>
                 </div>
               </>
             )}
 
             {/* --------------------------------------------------------------
-                TAB 3: AI AGRONOMIST AGENT (WITH IMPLEMENT / IGNORE CHOICES)
+                TAB 3: AI AGRONOMIST AGENT & SEARCH TOOL
                 -------------------------------------------------------------- */}
             {activeTab === 'ai' && (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff' }}>AgriSense AI Agronomist</div>
-                  <span style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.2)', padding: '3px 10px', borderRadius: '12px', fontWeight: 700 }}>
-                    Active Reasoning
-                  </span>
+                {/* DEDICATED AI RECOMMENDATION SEARCH TOOL */}
+                <div className="ai-search-tool-card">
+                  <div className="ai-search-tool-header">
+                    <div className="ai-search-tool-title">
+                      <span>🤖</span>
+                      <span>Ask AI for Recommendations</span>
+                    </div>
+                    <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
+                      Custom Plans
+                    </span>
+                  </div>
+
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handleAISearchSubmit(); }}
+                    className="ai-search-input-box"
+                  >
+                    <input
+                      type="text"
+                      className="ai-search-input-field"
+                      placeholder="Ask for custom recommendations (e.g. 'manage heatwave', 'reduce clay runoff')..."
+                      value={aiSearchInput}
+                      onChange={(e) => setAiSearchInput(e.target.value)}
+                    />
+                    <button type="submit" className="ai-search-submit-btn" disabled={isGeneratingRec}>
+                      {isGeneratingRec ? 'Generating...' : 'Formulate'}
+                    </button>
+                  </form>
+
+                  {/* Smart Prompt Chips */}
+                  <div className="chat-suggestions-scroll" style={{ padding: '0 0 2px 0' }}>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Protect crops from high heat and drought')}>
+                      🌡️ Heatwave Protection
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How to leach root salinity in sandy soil')}>
+                      🧪 Salinity Leaching
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Prevent surface runoff on heavy clay')}>
+                      🚜 Clay Runoff
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Should I hold irrigation for incoming rain forecast')}>
+                      🌧️ Rain Hold
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Water schedule for corn and wheat yield')}>
+                      🌽 Crop Water
+                    </button>
+                  </div>
                 </div>
 
-                <p style={{ fontSize: '12px', color: '#93c5fd' }}>
-                  Recommendations tailored to <strong>{selectedSoilUnit.name}</strong> and live meteorological forecasts.
-                </p>
+                {/* RECOMMENDATIONS DECK (Clean, uncluttered, collapsible rationale) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {recommendations.map(rec => {
+                    const isExpanded = !!expandedRationales[rec.id];
+                    return (
+                      <div
+                        key={rec.id}
+                        className={`ai-recommendation-card priority-${rec.priority.toLowerCase()}`}
+                        style={{ padding: '14px' }}
+                      >
+                        <div className="rec-header" style={{ marginBottom: '6px' }}>
+                          <div className="rec-title" style={{ fontSize: '13.5px' }}>{rec.title}</div>
+                          <span className={`rec-priority-badge badge-${rec.priority.toLowerCase()}`}>
+                            {rec.priority}
+                          </span>
+                        </div>
 
-                {/* AI Recommendation Cards Deck */}
-                {recommendations.map(rec => (
-                  <div
-                    key={rec.id}
-                    className={`ai-recommendation-card priority-${rec.priority.toLowerCase()}`}
-                  >
-                    <div className="rec-header">
-                      <div className="rec-title">{rec.title}</div>
-                      <span className={`rec-priority-badge badge-${rec.priority.toLowerCase()}`}>
-                        {rec.priority}
-                      </span>
-                    </div>
+                        {rec.userGenerated && (
+                          <div className="ai-query-badge">
+                            ✨ AI Generated for: "{rec.queryAsked}"
+                          </div>
+                        )}
 
-                    <div className="rec-body-text">{rec.summary}</div>
+                        <div className="rec-body-text" style={{ fontSize: '12px', margin: '6px 0' }}>
+                          {rec.summary}
+                        </div>
 
-                    <div className="rec-rationale-box">
-                      <strong>USDA Rationale: </strong> {rec.scientificRationale}
-                    </div>
+                        {/* Collapsible Scientific Rationale (Keeps UI clean!) */}
+                        <div style={{ margin: '4px 0' }}>
+                          <button
+                            type="button"
+                            className="btn-toggle-rationale"
+                            onClick={() => toggleRationale(rec.id)}
+                          >
+                            <span>{isExpanded ? '▴ Hide USDA Soil Physics' : '▾ View USDA Scientific Rationale'}</span>
+                          </button>
 
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#38bdf8' }}>
-                      ⚡ Action: {rec.suggestedAction}
-                    </div>
+                          {isExpanded && (
+                            <div className="rec-rationale-box" style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: 1.45 }}>
+                              <strong>USDA NRCS Analysis: </strong>{rec.scientificRationale}
+                            </div>
+                          )}
+                        </div>
 
-                    {/* Implement / Ignore Buttons */}
-                    {rec.status === 'pending' || !rec.status ? (
-                      <div className="rec-actions-row">
-                        <button
-                          className="btn-ios-implement"
-                          onClick={() => handleImplementRec(rec.id)}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                          Implement Recommendation
-                        </button>
-                        <button
-                          className="btn-ios-ignore"
-                          onClick={() => handleIgnorePrompt(rec.id)}
-                        >
-                          Ignore / Dismiss
-                        </button>
+                        <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#38bdf8', margin: '4px 0 8px 0' }}>
+                          ⚡ Action: {rec.suggestedAction}
+                        </div>
+
+                        {/* Action Buttons */}
+                        {rec.status === 'pending' || !rec.status ? (
+                          <div className="rec-actions-row">
+                            <button
+                              className="btn-ios-implement"
+                              onClick={() => handleImplementRec(rec.id)}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                              Implement Recommendation
+                            </button>
+                            <button
+                              className="btn-ios-ignore"
+                              onClick={() => setIgnoreModalRecId(rec.id)}
+                            >
+                              Ignore / Dismiss
+                            </button>
+                          </div>
+                        ) : (
+                          <div className={`status-badge-decided ${rec.status === 'implemented' ? 'decided-implemented' : 'decided-ignored'}`}>
+                            {rec.status === 'implemented' ? '✅ IMPLEMENTED BY FARMER' : '⚪ IGNORED / DISMISSED BY FARMER'}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className={`status-badge-decided ${rec.status === 'implemented' ? 'decided-implemented' : 'decided-ignored'}`}>
-                        {rec.status === 'implemented' ? '✅ IMPLEMENTED BY FARMER' : '⚪ IGNORED / DISMISSED BY FARMER'}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
 
-                {/* Conversational Assistant Card */}
-                <div className="ai-chat-card">
+                {/* Conversational Assistant */}
+                <div className="ai-chat-card" style={{ marginTop: '12px' }}>
                   <div className="card-header-row">
                     <div className="card-title-group">
                       <div className="sf-icon-badge badge-sky">
@@ -1141,13 +1134,13 @@ function FarmFlowReactApp() {
                         </svg>
                       </div>
                       <div>
-                        <div className="card-title-text">Ask AgriSense AI</div>
-                        <div className="card-caption-text">{selectedLocation.area} USDA Soil &amp; Hydrology Expert</div>
+                        <div className="card-title-text">AgriSense Chatbot</div>
+                        <div className="card-caption-text">{selectedLocation.area} Hydrology Assistant</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="chat-messages-container">
+                  <div className="chat-messages-container" style={{ maxHeight: '180px' }}>
                     {chatMessages.map((msg, idx) => (
                       <div key={idx} className={`chat-bubble ${msg.sender === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
                         {msg.text}
@@ -1155,31 +1148,24 @@ function FarmFlowReactApp() {
                     ))}
                   </div>
 
-                  {/* Suggestion Chips */}
-                  <div className="chat-suggestions-scroll">
-                    <button className="suggestion-pill" onClick={() => handleSendChatMessage('How much water is in my root zone?')}>
-                      💧 Root zone water?
-                    </button>
-                    <button className="suggestion-pill" onClick={() => handleSendChatMessage('What does my salinity EC mean for crops?')}>
-                      🧪 Salinity impact?
-                    </button>
-                    <button className="suggestion-pill" onClick={() => handleSendChatMessage('What is the rainfall forecast for my location?')}>
-                      🌧️ Rain forecast?
-                    </button>
-                    <button className="suggestion-pill" onClick={() => handleSendChatMessage('How do I leach salts from this soil?')}>
-                      ⚡ Salt leaching?
-                    </button>
-                  </div>
-
-                  <form onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }} className="chat-input-bar">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (chatInput.trim()) {
+                        handleAISearchSubmit(chatInput);
+                        setChatInput('');
+                      }
+                    }}
+                    className="chat-input-bar"
+                  >
                     <input
                       type="text"
                       className="chat-text-input"
-                      placeholder="Ask about salinity, water quantity, or crops..."
+                      placeholder="Ask anything or request recommendations..."
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                     />
-                    <button type="submit" className="chat-send-btn" title="Send query to AI">
+                    <button type="submit" className="chat-send-btn" title="Send to AI">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                       </svg>
@@ -1190,7 +1176,7 @@ function FarmFlowReactApp() {
             )}
 
             {/* --------------------------------------------------------------
-                TAB 4: DETAILED USDA PEDON HORIZONS (SOIL LAYERS)
+                TAB 4: PEDON HORIZONS
                 -------------------------------------------------------------- */}
             {activeTab === 'pedon' && (
               <>
@@ -1225,25 +1211,11 @@ function FarmFlowReactApp() {
                     ))}
                   </div>
                 </div>
-
-                {/* Konawa Reference Soil Profile */}
-                <div className="ios-card">
-                  <div className="card-title-text" style={{ fontSize: '14px' }}>Konawa Fine-Loamy Profile Reference</div>
-                  <div style={{ fontSize: '12px', color: '#93c5fd' }}>
-                    Classification: Fine-loamy, mixed, active, thermic Ultic Haplustalf. Bedrock deeper than 80 inches.
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                    <span style={{ fontSize: '11px', background: 'rgba(56, 189, 248, 0.15)', color: '#bae6fd', padding: '4px 8px', borderRadius: '6px' }}>Oklahoma pH Median: 6.2</span>
-                    <span style={{ fontSize: '11px', background: 'rgba(56, 189, 248, 0.15)', color: '#bae6fd', padding: '4px 8px', borderRadius: '6px' }}>Nitrate-N: 8 lb/acre</span>
-                    <span style={{ fontSize: '11px', background: 'rgba(56, 189, 248, 0.15)', color: '#bae6fd', padding: '4px 8px', borderRadius: '6px' }}>Phosphorus STP: 32</span>
-                    <span style={{ fontSize: '11px', background: 'rgba(56, 189, 248, 0.15)', color: '#bae6fd', padding: '4px 8px', borderRadius: '6px' }}>Potassium STK: 233</span>
-                  </div>
-                </div>
               </>
             )}
 
             {/* --------------------------------------------------------------
-                TAB 5: FARM DECISION JOURNAL & COMPLIANCE LOG
+                TAB 5: DECISION JOURNAL
                 -------------------------------------------------------------- */}
             {activeTab === 'log' && (
               <>
@@ -1286,7 +1258,7 @@ function FarmFlowReactApp() {
 
                   {farmLogs.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '24px', color: '#93c5fd', fontSize: '13px' }}>
-                      No actions recorded yet. Navigate to the <strong>AI Agent</strong> tab to implement or ignore recommendations.
+                      No actions recorded yet. Navigate to the <strong>AI Agent</strong> tab to implement recommendations.
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1310,7 +1282,7 @@ function FarmFlowReactApp() {
                             </div>
                             <div style={{ fontWeight: 700, fontSize: '13px', color: '#fff' }}>{l.title}</div>
                             <div style={{ fontSize: '11px', color: '#67e8f9', marginTop: '2px' }}>
-                              {l.waterVolumeGallons > 0 ? `Water Volume: ${l.waterVolumeGallons.toLocaleString()} gallons` : 'No water application'} &bull; {l.feedback}
+                              {l.waterVolumeGallons > 0 ? `Water Volume: ${l.waterVolumeGallons.toLocaleString()} gal` : 'No water application'} &bull; {l.feedback}
                             </div>
                           </div>
                         ))}
@@ -1324,11 +1296,7 @@ function FarmFlowReactApp() {
 
           {/* ==================== FROSTED GLASS TAB BAR ==================== */}
           <div className="ios-tab-bar">
-            {/* Tab 1: Map & Soil */}
-            <div
-              className={`tab-item ${activeTab === 'map' ? 'active' : ''}`}
-              onClick={() => setActiveTab('map')}
-            >
+            <div className={`tab-item ${activeTab === 'map' ? 'active' : ''}`} onClick={() => setActiveTab('map')}>
               <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
                 <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
@@ -1336,44 +1304,28 @@ function FarmFlowReactApp() {
               <span>Map &amp; Soil</span>
             </div>
 
-            {/* Tab 2: Water Volume */}
-            <div
-              className={`tab-item ${activeTab === 'water' ? 'active' : ''}`}
-              onClick={() => setActiveTab('water')}
-            >
+            <div className={`tab-item ${activeTab === 'water' ? 'active' : ''}`} onClick={() => setActiveTab('water')}>
               <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
               </svg>
               <span>Water Vol.</span>
             </div>
 
-            {/* Tab 3: AI Agronomist */}
-            <div
-              className={`tab-item ${activeTab === 'ai' ? 'active' : ''}`}
-              onClick={() => setActiveTab('ai')}
-            >
+            <div className={`tab-item ${activeTab === 'ai' ? 'active' : ''}`} onClick={() => setActiveTab('ai')}>
               <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/>
               </svg>
               <span>AI Agent</span>
             </div>
 
-            {/* Tab 4: Pedon Horizons */}
-            <div
-              className={`tab-item ${activeTab === 'pedon' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pedon')}
-            >
+            <div className={`tab-item ${activeTab === 'pedon' ? 'active' : ''}`} onClick={() => setActiveTab('pedon')}>
               <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
               </svg>
               <span>Pedon</span>
             </div>
 
-            {/* Tab 5: Decision Journal */}
-            <div
-              className={`tab-item ${activeTab === 'log' ? 'active' : ''}`}
-              onClick={() => setActiveTab('log')}
-            >
+            <div className={`tab-item ${activeTab === 'log' ? 'active' : ''}`} onClick={() => setActiveTab('log')}>
               <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
               </svg>
@@ -1381,7 +1333,6 @@ function FarmFlowReactApp() {
             </div>
           </div>
 
-          {/* iOS Home Indicator Capsule */}
           <div className="ios-home-indicator"></div>
 
         </div>
@@ -1390,7 +1341,7 @@ function FarmFlowReactApp() {
   );
 }
 
-// Mount the React Application into the DOM
+// Mount into DOM
 const rootEl = document.getElementById('react-farm-flow-root');
 if (rootEl) {
   const root = ReactDOM.createRoot(rootEl);

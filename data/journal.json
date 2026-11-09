@@ -1,5 +1,17 @@
 [
   {
+    "id": "log-1794193152278",
+    "timestamp": "08:59 PM",
+    "date": "2026-11-09",
+    "actionTaken": "IMPLEMENTED",
+    "title": "Flush Root Zone: Salinity Spike (2.25 mS/cm > 2)",
+    "recId": "rec-salinity-1794193134360-1",
+    "priority": "HIGH",
+    "waterVolumeGallons": 42000,
+    "feedback": "Farmer confirmed via 1-Click. Automated WiseConn valves synchronized.",
+    "location": "Active Parcel"
+  },
+  {
     "id": "init-1",
     "timestamp": "07:12 PM",
     "date": "2026-11-09",

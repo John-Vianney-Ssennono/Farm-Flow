@@ -276,38 +276,165 @@ window.AIAgentEngine = {
   },
 
   /**
-   * Conversational Assistant: Processes natural language farmer questions
-   * and returns scientifically verified responses contextualized to Cleveland County, OK.
+   * Natural Language Recommendation Generator:
+   * Generates a targeted, actionable Recommendation Card based on user query
    */
-  generateChatResponse(userMessage, currentSoilUnit, currentVwc, salinityEc) {
-    // Convert message to lowercase for matching
-    const msg = userMessage.toLowerCase();
-    const u = currentSoilUnit;
+  generateRecommendationFromQuery(query, locationData, currentSoilUnit, weatherData, currentVwc = 18.2, salinityEc = 2.0, fieldAcres = 12.5) {
+    const q = (query || '').toLowerCase().trim();
+    const u = currentSoilUnit || (window.USDA_CLEVELAND_SOIL_DATA ? window.USDA_CLEVELAND_SOIL_DATA.soilUnits['stephenville-harrah-newalla'] : {
+      name: 'Agricultural Loam Complex',
+      primaryTexture: 'Loam',
+      sandPercent: 40, siltPercent: 40, clayPercent: 20,
+      rootZoneDepthInches: 48, availableWaterCapacityInIn: 0.16,
+      infiltrationRateInHr: 0.85, bulkDensityGcm3: 1.38,
+      permanentWiltingPointVwc: 8.0, fieldCapacityVwc: 24.0,
+      salinitySensitivityThreshold: 2.0
+    });
+    const locName = locationData ? (locationData.area || locationData.name || 'Your Field') : 'Your Field';
+    const w = weatherData || { tempF: 75, humidity: 55, rainForecastInches: 0.3, et0: 0.18, condition: 'Clear' };
+    const acres = fieldAcres || 12.5;
 
-    // Handle questions regarding Salinity or Electrical Conductivity
-    if (msg.includes('salinity') || msg.includes('salt') || msg.includes('ms/cm') || msg.includes('ec')) {
-      return `At your current location in Cleveland County, the soil is **${u.name}** with a measured salinity of **${salinityEc} mS/cm**. Because this soil has a sensitivity threshold of ${u.salinitySensitivityThreshold} mS/cm, salts create osmotic pressure that impedes water uptake. To leach salts below the root zone (${u.rootZoneDepthInches}"), apply a leaching fraction of ~15% extra fresh water via WiseConn Valve 4 during cool evening hours.`;
+    let rec = null;
+    let reply = '';
+
+    // 1. Rain / Forecast / Weather / Storm (Checked first so rain queries get weather advice)
+    if (/\b(rain|raining|rains|storm|storms|forecast|precipitation|cloudy|weather)\b/i.test(q)) {
+      const rainVol = Math.round(w.rainForecastInches * 27154 * acres);
+      rec = {
+        id: `rec-user-rain-${Date.now()}`,
+        priority: w.rainForecastInches > 0.2 ? 'CRITICAL' : 'ADVISORY',
+        category: 'Weather Synchronization',
+        title: `Precipitation Hold: Capture Natural Rainfall (${w.rainForecastInches}")`,
+        summary: `In response to your query: Live forecasts for ${locName} predict ${w.rainForecastInches}" of rainfall within 24 hours. Pre-storm irrigation risks soil supersaturation, root hypoxia, and nutrient runoff.`,
+        scientificRationale: `Meteoric water is virtually salt-free and delivers natural dissolved nitrogen. Suspending automated well pumps maximizes soil storage capacity for incoming rainfall.`,
+        suggestedAction: `Activate 36-hour automated pump hold across all ${acres} acres. Re-verify root zone VWC after storm passage before resuming schedule.`,
+        waterSavingsGallons: rainVol,
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `Analyzing weather for **${locName}**: We anticipate **${w.rainForecastInches}" of natural precipitation** (${w.condition}). I've generated a **Precipitation Hold** action that will conserve up to **${rainVol.toLocaleString()} gallons** of pumped groundwater.`;
+    }
+    // 2. Salinity / Salt / Leaching / EC / TDS / Sodium / Brackish
+    else if (/\b(ec|salin\w*|salts?|salty|sodium|leach\w*|brackish|desalination)\b/i.test(q)) {
+      const lrFraction = +(1.2 / (5 * salinityEc - 1.2)).toFixed(3);
+      const flushInches = +(Math.max(0.3, lrFraction * 2.5)).toFixed(2);
+      const flushGal = Math.round(flushInches * 27154 * acres);
+      rec = {
+        id: `rec-user-salinity-${Date.now()}`,
+        priority: salinityEc > u.salinitySensitivityThreshold ? 'CRITICAL' : 'HIGH',
+        category: 'Salinity Leaching',
+        title: `Targeted Root Desalination: Osmotic Pressure Relief (${salinityEc} mS/cm)`,
+        summary: `In response to your query: Soluble salts in ${locName} (${u.primaryTexture}) are restricting root water uptake. Even with moisture present, salts exert osmotic tension that starves crop roots.`,
+        scientificRationale: `USDA Agriculture Handbook 60 establishes the Salt Leaching Requirement formula (LR = ECw / [5·ECe - ECw]). Displacing cations below active ${u.rootZoneDepthInches}" root horizons requires a calibrated freshwater pulse.`,
+        suggestedAction: `Actuate Valve #4 to apply ${flushInches}" of low-EC freshwater (~${flushGal.toLocaleString()} gallons) during evening hours when capillary redistribution is highest.`,
+        waterSavingsGallons: flushGal,
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `Based on your question about salinity at **${locName}**, soil pore EC is currently **${salinityEc} mS/cm** (sensitivity limit: ${u.salinitySensitivityThreshold} mS/cm). I have generated a **Targeted Root Desalination** recommendation with exact gallon calculations for your ${acres} acres.`;
+    }
+    // 3. Heat / Temperature / Summer / Drought
+    else if (/\b(heat|hot|drought|dry|temperatures?|high temp|summer|heatwave)\b/i.test(q) && !/\b(wheat)\b/i.test(q)) {
+      const extraWater = Math.round(0.35 * 27154 * acres);
+      rec = {
+        id: `rec-user-heat-${Date.now()}`,
+        priority: (w.tempF > 85 || w.et0 > 0.20) ? 'CRITICAL' : 'HIGH',
+        category: 'Heat & Evaporation Management',
+        title: `Pre-Dawn Hydration Shield: High Thermal Demand (${w.tempF}°F)`,
+        summary: `In response to your query: At ${locName}, atmospheric demand (ET0: ${w.et0}"/day) is elevating transpirational pull on ${u.name}. Irrigating during midday loses up to 35% directly to evaporation.`,
+        scientificRationale: `FAO-56 and USDA hydrologic models show that pre-dawn irrigation (04:00 - 07:30 AM) allows soil matric potential to reach equilibrium before peak atmospheric vapor pressure deficit at solar noon.`,
+        suggestedAction: `Program automated WiseConn Valve cycle for 40 minutes at 04:30 AM (~${extraWater.toLocaleString()} gal across ${acres} acres) to establish a thermal root moisture buffer.`,
+        waterSavingsGallons: Math.round(extraWater * 0.3),
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `I analyzed your query regarding thermal stress for **${locName}**. Current ambient temperature is **${w.tempF}°F** with reference evapotranspiration at **${w.et0}"/day**. I have formulated a **Pre-Dawn Hydration Shield** recommendation and added it directly to your action deck.`;
+    }
+    // 4. Heavy Clay / Standing Water / Ponding / Runoff / Compaction / Poor Drainage
+    else if (/\b(clay|drain\w*|standing water|ponding|runoff|compact\w*|slow infiltration|slopes?)\b/i.test(q)) {
+      rec = {
+        id: `rec-user-drainage-${Date.now()}`,
+        priority: 'HIGH',
+        category: 'Infiltration Optimization',
+        title: `Cycle-and-Soak Protocol: Runoff & Surface Ponding Mitigation`,
+        summary: `In response to your query: In ${u.name}, infiltration capacity is limited to ${u.infiltrationRateInHr}"/hr with a bulk density of ${u.bulkDensityGcm3} g/cm³. Continuous irrigation generates immediate surface ponding and lateral erosion.`,
+        scientificRationale: `USDA NRCS soil mechanics explain that swelling clay lattices seal soil pores when wetted rapidly. Pulsed delivery allows matric suction to pull water downward through capillary micropores before surface saturation occurs.`,
+        suggestedAction: `Reconfigure controller into 15-minute operational bursts followed by 35-minute rest intervals. Lower nozzle application rate to < ${u.infiltrationRateInHr}"/hr.`,
+        waterSavingsGallons: Math.round(18000 * acres),
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `Addressing your question on drainage and runoff: In **${u.name}** at ${locName}, the infiltration limit is **${u.infiltrationRateInHr}"/hr**. I have added a **Cycle-and-Soak Protocol** to your recommendation deck to eliminate surface ponding.`;
+    }
+    // 5. Sandy Soil / Fast Draining / Leaching / Shallow Bedrock
+    else if (/\b(sand\w*|coarse|rapid drainage|deep percolation|shallow)\b/i.test(q)) {
+      rec = {
+        id: `rec-user-sandy-${Date.now()}`,
+        priority: 'HIGH',
+        category: 'Percolation Management',
+        title: `High-Frequency Micro-Dosing: Coarse Texture Retention`,
+        summary: `In response to your query: Coarse texture (${u.sandPercent}% sand) in ${locName} has rapid percolation (${u.infiltrationRateInHr}"/hr) and low AWC (${u.availableWaterCapacityInIn}"/in). Single heavy irrigations wash water and nitrates into subsoil bedrock.`,
+        scientificRationale: `Soil moisture retention curves show coarse sand reaches gravitational drain point rapidly. Splitting allocation into frequent shallow pulses holds moisture within the upper active root zone.`,
+        suggestedAction: `Shift from deep weekly sets to twice-daily 18-minute micro-drip pulses. Reduce individual set volumes to 0.25" to prevent deep loss.`,
+        waterSavingsGallons: Math.round(22000 * acres),
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `Regarding sandy soil behavior in **${locName}**: With **${u.sandPercent}% sand**, water rapidly percolates past root reach. I've created a **High-Frequency Micro-Dosing** recommendation to maintain root-zone moisture without wasting water.`;
+    }
+    // 6. Crops / Planting / Corn / Wheat / Pecan / Soybeans / Alfalfa / Grass / Yield
+    else if (/\b(crop\w*|wheat|corn|pecan\w*|soybeans?|alfalfa|sorghum|cotton|produce|planting|yield)\b/i.test(q)) {
+      rec = {
+        id: `rec-user-crop-${Date.now()}`,
+        priority: 'HIGH',
+        category: 'Crop Phenology Management',
+        title: `Phenological Water Scheduling for Local Soil Profile`,
+        summary: `In response to your query on crop growth: For crops cultivated in ${locName}'s ${u.primaryTexture}, root development extends to ${u.rootZoneDepthInches}" depth with ${u.availableWaterCapacityInIn}"/in water capacity. Maintaining moisture above ${u.permanentWiltingPointVwc + 6}% VWC prevents yield-critical stress.`,
+        scientificRationale: `FAO Crop Water Stress Index (CWSI) models indicate reproductive tasseling, heading, and nut-fill stages require maintaining root zone depletion below 45% of Total Available Water (TAW).`,
+        suggestedAction: `Calibrate irrigation to deliver 1.2" weekly water equivalent, monitoring pore EC below ${u.salinitySensitivityThreshold} mS/cm.`,
+        waterSavingsGallons: Math.round(25000 * acres),
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `Regarding crop management in **${locName}**: Your soil profile (**${u.name}**) provides **${u.availableWaterCapacityInIn}"/in of water storage** down to **${u.rootZoneDepthInches} inches**. I have generated a customized **Phenological Water Scheduling** plan for your crops.`;
+    }
+    // 7. Universal Fallback - Intelligently constructs custom recommendation for ANY question!
+    else {
+      rec = {
+        id: `rec-user-custom-${Date.now()}`,
+        priority: 'HIGH',
+        category: 'Precision Agronomy Advisory',
+        title: `Action Plan: ${query.length > 45 ? query.substring(0, 42) + '...' : query}`,
+        summary: `In response to "${query}" at ${locName}: Evaluating current soil texture (${u.primaryTexture}, Sand: ${u.sandPercent}%, Silt: ${u.siltPercent}%, Clay: ${u.clayPercent}%), root zone moisture (${currentVwc}% VWC), salinity (${salinityEc} mS/cm), and ambient temperature (${w.tempF}°F).`,
+        scientificRationale: `Precision irrigation requires balancing active root infiltration (${u.infiltrationRateInHr}"/hr) against atmospheric demand (${w.et0}"/day) to keep available water between permanent wilting point (${u.permanentWiltingPointVwc}%) and field capacity (${u.fieldCapacityVwc}%).`,
+        suggestedAction: `Adjust automated controller setpoint to maintain optimal moisture band (${(u.permanentWiltingPointVwc + (u.fieldCapacityVwc - u.permanentWiltingPointVwc) * 0.5).toFixed(1)}% VWC) across your ${acres} acres.`,
+        waterSavingsGallons: Math.round(15000 * acres),
+        status: 'pending',
+        userGenerated: true,
+        queryAsked: query
+      };
+      reply = `I have processed your query: **"${query}"** for **${locName}**. Synthesizing your **${u.name}** soil data, **${currentVwc}% VWC** moisture, and **${w.tempF}°F** weather, I have formulated a dedicated **Custom Action Plan** and added it to your recommendation deck below.`;
     }
 
-    // Handle questions regarding Soil Structure, Texture, Clay, or Sand
-    if (msg.includes('structure') || msg.includes('texture') || msg.includes('clay') || msg.includes('sand') || msg.includes('loam')) {
-      return `Your soil texture is classified as **${u.primaryTexture}** (Sand: ${u.sandPercent}%, Silt: ${u.siltPercent}%, Clay: ${u.clayPercent}%). Bulk density is ${u.bulkDensityGcm3} g/cm³. The surface Ap horizon is ${u.horizons[0].depth} with pH ${u.horizons[0].ph}. The subsoil has a permeability rating of **${u.permeabilityRating}**, which governs how fast water infiltrates (${u.infiltrationRateInHr} in/hr).`;
-    }
+    // Prepend recommendation to active deck
+    this.activeRecommendations.unshift(rec);
+    this.notify();
 
-    // Handle questions regarding Water Quantity, Volume, or Gallons
-    if (msg.includes('water') || msg.includes('quantity') || msg.includes('how much') || msg.includes('gallons') || msg.includes('volume')) {
-      const calc = window.USDA_CLEVELAND_SOIL_DATA.Calculations;
-      const taw = calc.calcTotalAvailableWaterInches(u.id);
-      const curWater = calc.calcCurrentWaterDepthInches(u.id, currentVwc);
-      return `Based on the USDA Available Water Capacity of ${u.availableWaterCapacityInIn} in/in and a root depth of ${u.rootZoneDepthInches} inches, your soil's Total Available Water capacity is **${taw} inches** (~${(taw * 27154).toLocaleString()} gal/acre). Currently, you have **${curWater} inches** of stored water. Since moisture is at ${currentVwc}% VWC, the effective available volume after osmotic salinity adjustment is **${calc.calcEffectiveWaterCapacity(u.id, currentVwc, salinityEc).effectiveWaterInches} inches**.`;
-    }
+    return { recommendation: rec, reply };
+  },
 
-    // Handle questions regarding Crop Selection
-    if (msg.includes('crop') || msg.includes('plant') || msg.includes('grow') || msg.includes('wheat') || msg.includes('pecan')) {
-      return `For **${u.name}** in Norman/Cleveland County, the USDA recommends drought-hardy winter wheat, sorghum, and deep-rooted specialty crops like pecans in loamy floodplains. In heavy clay soils (Renfrow), ensure adequate drainage to avoid root rot.`;
-    }
-
-    // Default contextualized response
-    return `I am analyzing your location in Cleveland County, Oklahoma. Your parcel sits on **${u.name}** (${u.primaryTexture}). Available water capacity is ${u.availableWaterCapacityInIn} in/in, and infiltration rate is ${u.infiltrationRateInHr} in/hr. Would you like me to calculate your irrigation run time or assess salt leaching requirements?`;
+  /**
+   * Conversational Assistant: Processes natural language farmer questions
+   * and returns scientifically verified responses contextualized to active location.
+   */
+  generateChatResponse(userMessage, currentSoilUnit, currentVwc, salinityEc, locationData = null, weatherData = null) {
+    const res = this.generateRecommendationFromQuery(userMessage, locationData, currentSoilUnit, weatherData, currentVwc, salinityEc);
+    return res.reply;
   }
 };
