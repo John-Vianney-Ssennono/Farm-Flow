@@ -1,8 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const jsxPath = path.join(__dirname, 'Farm-Flow', 'js', 'FarmFlowReactApp.jsx');
-const indexPath = path.join(__dirname, 'Farm-Flow', 'index.html');
+const jsxPath = fs.existsSync(path.join(__dirname, 'js', 'FarmFlowReactApp.jsx'))
+  ? path.join(__dirname, 'js', 'FarmFlowReactApp.jsx')
+  : path.join(__dirname, 'Farm-Flow', 'js', 'FarmFlowReactApp.jsx');
+const indexPath = fs.existsSync(path.join(__dirname, 'index.html'))
+  ? path.join(__dirname, 'index.html')
+  : path.join(__dirname, 'Farm-Flow', 'index.html');
 
 const jsx = fs.readFileSync(jsxPath, 'utf8');
 
@@ -76,5 +80,11 @@ ${jsx}
 </html>`;
 
 fs.writeFileSync(indexPath, html, 'utf8');
-console.log('✅ Farm-Flow/index.html successfully updated with inline component!');
+if (fs.existsSync(path.join(__dirname, 'Farm-Flow', 'index.html'))) {
+  fs.writeFileSync(path.join(__dirname, 'Farm-Flow', 'index.html'), html, 'utf8');
+}
+if (fs.existsSync(path.join(__dirname, 'index.html'))) {
+  fs.writeFileSync(path.join(__dirname, 'index.html'), html, 'utf8');
+}
+console.log('✅ index.html successfully updated with inline component!');
 

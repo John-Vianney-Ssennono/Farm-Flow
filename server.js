@@ -76,6 +76,9 @@ const GLOBAL_LOCATION_INDEX = [
   { name: 'West Norman Loam Terraces', area: 'Ten Mile Flat', city: 'Norman', state: 'OK', country: 'USA', lat: 35.2450, lng: -97.5100 },
   { name: 'Oklahoma City Agricultural Belt', area: 'Central Oklahoma', city: 'Oklahoma City', state: 'OK', country: 'USA', lat: 35.4676, lng: -97.5164 },
   { name: 'Stillwater OSU Agronomy Research', area: 'Payne County', city: 'Stillwater', state: 'OK', country: 'USA', lat: 36.1156, lng: -97.0584 },
+  { name: 'Tulsa Arkansas River Valley', area: 'Green Country', city: 'Tulsa', state: 'OK', country: 'USA', lat: 36.1540, lng: -95.9928 },
+  { name: 'Enid Wheat Capital of Oklahoma', area: 'Garfield County', city: 'Enid', state: 'OK', country: 'USA', lat: 36.3956, lng: -97.8784 },
+  { name: 'Lawton Southwest Redbed Plains', area: 'Comanche County', city: 'Lawton', state: 'OK', country: 'USA', lat: 34.6036, lng: -98.3959 },
   
   // Texas Agricultural Hubs
   { name: 'Austin AgTech Research Parcel', area: 'Travis County', city: 'Austin', state: 'TX', country: 'USA', lat: 30.2672, lng: -97.7431 },
@@ -83,47 +86,95 @@ const GLOBAL_LOCATION_INDEX = [
   { name: 'Houston Gulf Coast Alluvium', area: 'Harris County', city: 'Houston', state: 'TX', country: 'USA', lat: 29.7604, lng: -95.3698 },
   { name: 'San Antonio Blackland Prairie', area: 'Bexar County', city: 'San Antonio', state: 'TX', country: 'USA', lat: 29.4241, lng: -98.4936 },
   { name: 'Lubbock High Plains Cotton Basin', area: 'Llano Estacado', city: 'Lubbock', state: 'TX', country: 'USA', lat: 33.5779, lng: -101.8552 },
+  { name: 'Amarillo Panhandle Wheat & Cattle', area: 'Potter County', city: 'Amarillo', state: 'TX', country: 'USA', lat: 35.2220, lng: -101.8313 },
   { name: 'Rio Grande Valley Citrus Groves', area: 'Hidalgo County', city: 'McAllen', state: 'TX', country: 'USA', lat: 26.2034, lng: -98.2300 },
+  { name: 'El Paso Rio Grande Mesilla Valley', area: 'Trans-Pecos', city: 'El Paso', state: 'TX', country: 'USA', lat: 31.7619, lng: -106.4850 },
+  { name: 'Waco Brazos River Loam Terraces', area: 'McLennan County', city: 'Waco', state: 'TX', country: 'USA', lat: 31.5493, lng: -97.1467 },
 
   // California Agricultural Basins
   { name: 'Central Valley Almond Basin (Fresno)', area: 'San Joaquin Valley', city: 'Fresno', state: 'CA', country: 'USA', lat: 36.7468, lng: -119.7726 },
   { name: 'Bakersfield Southern Valley Farm', area: 'Kern County', city: 'Bakersfield', state: 'CA', country: 'USA', lat: 35.3733, lng: -119.0187 },
+  { name: 'Modesto Stanislaus Ag Center', area: 'Stanislaus County', city: 'Modesto', state: 'CA', country: 'USA', lat: 37.6391, lng: -120.9969 },
+  { name: 'Stockton Sacramento Delta Peat', area: 'San Joaquin County', city: 'Stockton', state: 'CA', country: 'USA', lat: 37.9577, lng: -121.2908 },
+  { name: 'Visalia Tulare Dairy & Citrus', area: 'Tulare County', city: 'Visalia', state: 'CA', country: 'USA', lat: 36.3302, lng: -119.2921 },
   { name: 'Salinas Valley Specialty Greens', area: 'Salinas River Valley', city: 'Salinas', state: 'CA', country: 'USA', lat: 36.6777, lng: -121.6555 },
-  { name: 'Imperial Valley Desert Irrigation District', area: 'Colorado River Basin', city: 'El Centro', state: 'CA', country: 'USA', lat: 32.7920, lng: -115.5631 },
+  { name: 'Imperial Valley Desert Irrigation District', area: 'Colorado River Basin', city: 'El Centro', state: 'CA', country: 'USA', lat: 32.8473, lng: -115.5694 },
+  { name: 'Brawley Colorado Basin Farmlands', area: 'Imperial Valley', city: 'Brawley', state: 'CA', country: 'USA', lat: 32.9787, lng: -115.5303 },
+  { name: 'Coachella Valley Date Palms', area: 'Riverside County', city: 'Indio', state: 'CA', country: 'USA', lat: 33.7206, lng: -116.2156 },
   { name: 'Sacramento Valley Rice Terraces', area: 'Sacramento Basin', city: 'Sacramento', state: 'CA', country: 'USA', lat: 38.5816, lng: -121.4944 },
+  { name: 'Napa Valley Premium Viticulture', area: 'Napa River Basin', city: 'Napa', state: 'CA', country: 'USA', lat: 38.2975, lng: -122.2869 },
+  { name: 'Santa Rosa Sonoma Vineyards', area: 'Sonoma County', city: 'Santa Rosa', state: 'CA', country: 'USA', lat: 38.4404, lng: -122.7141 },
   { name: 'Los Angeles Coastal Watershed', area: 'Southern Coast', city: 'Los Angeles', state: 'CA', country: 'USA', lat: 34.0522, lng: -118.2437 },
+  { name: 'San Diego Coastal Subtropical Groves', area: 'San Diego County', city: 'San Diego', state: 'CA', country: 'USA', lat: 32.7157, lng: -117.1611 },
   { name: 'San Francisco Bay Microclimate', area: 'Bay Area', city: 'San Francisco', state: 'CA', country: 'USA', lat: 37.7749, lng: -122.4194 },
 
   // Midwest Corn Belt
   { name: 'Corn Belt Precision Plot (Des Moines)', area: 'Des Moines River Watershed', city: 'Des Moines', state: 'IA', country: 'USA', lat: 41.5868, lng: -93.6250 },
   { name: 'Ames ISU Agronomy Farms', area: 'Story County', city: 'Ames', state: 'IA', country: 'USA', lat: 42.0308, lng: -93.6319 },
+  { name: 'Cedar Rapids Grain Processing Hub', area: 'Linn County', city: 'Cedar Rapids', state: 'IA', country: 'USA', lat: 41.9779, lng: -91.6656 },
+  { name: 'Davenport Mississippi River Loess', area: 'Scott County', city: 'Davenport', state: 'IA', country: 'USA', lat: 41.5236, lng: -90.5776 },
   { name: 'Chicago Agricultural Exchange Region', area: 'Illinois Basin', city: 'Chicago', state: 'IL', country: 'USA', lat: 41.8781, lng: -87.6298 },
   { name: 'Champaign Prairie Mollisols', area: 'Central Illinois', city: 'Champaign', state: 'IL', country: 'USA', lat: 40.1164, lng: -88.2434 },
+  { name: 'Peoria Illinois River Valley', area: 'Peoria County', city: 'Peoria', state: 'IL', country: 'USA', lat: 40.6936, lng: -89.5890 },
+  { name: 'Springfield Sangamon Loam', area: 'Sangamon County', city: 'Springfield', state: 'IL', country: 'USA', lat: 39.7817, lng: -89.6501 },
   { name: 'Omaha Platte River Terraces', area: 'Eastern Nebraska', city: 'Omaha', state: 'NE', country: 'USA', lat: 41.2565, lng: -95.9345 },
   { name: 'Lincoln Agricultural Valley', area: 'Lancaster County', city: 'Lincoln', state: 'NE', country: 'USA', lat: 40.8136, lng: -96.7026 },
+  { name: 'Grand Island Central Platte Irrigated', area: 'Hall County', city: 'Grand Island', state: 'NE', country: 'USA', lat: 40.9250, lng: -98.3420 },
   { name: 'Kansas City Wheat Corridor', area: 'Missouri River Basin', city: 'Kansas City', state: 'MO', country: 'USA', lat: 39.0997, lng: -94.5786 },
+  { name: 'St. Louis Mississippi Confluence', area: 'St. Louis County', city: 'St. Louis', state: 'MO', country: 'USA', lat: 38.6270, lng: -90.1994 },
   { name: 'Wichita Winter Wheat Uplands', area: 'Sedgwick County', city: 'Wichita', state: 'KS', country: 'USA', lat: 37.6872, lng: -97.3301 },
+  { name: 'Garden City Ogallala Irrigated', area: 'Finney County', city: 'Garden City', state: 'KS', country: 'USA', lat: 37.9717, lng: -100.8727 },
+  { name: 'Dodge City Southwest Plains', area: 'Ford County', city: 'Dodge City', state: 'KS', country: 'USA', lat: 37.7528, lng: -100.0171 },
+  { name: 'Topeka Kansas River Valley', area: 'Shawnee County', city: 'Topeka', state: 'KS', country: 'USA', lat: 39.0473, lng: -95.6752 },
   { name: 'Minneapolis Upper Mississippi Watershed', area: 'Hennepin County', city: 'Minneapolis', state: 'MN', country: 'USA', lat: 44.9778, lng: -93.2650 },
+  { name: 'Fargo Red River Valley Heavy Clay', area: 'Cass County', city: 'Fargo', state: 'ND', country: 'USA', lat: 46.8772, lng: -96.7898 },
   { name: 'Indianapolis Central Till Plains', area: 'Marion County', city: 'Indianapolis', state: 'IN', country: 'USA', lat: 39.7684, lng: -86.1581 },
+  { name: 'Lafayette Purdue Agronomy Farm', area: 'Tippecanoe County', city: 'Lafayette', state: 'IN', country: 'USA', lat: 40.4167, lng: -86.8753 },
+  { name: 'Madison Dane County Dairy Silage', area: 'Dane County', city: 'Madison', state: 'WI', country: 'USA', lat: 43.0731, lng: -89.4012 },
 
   // Southeast & Florida
   { name: 'Miami Subtropical Ag District', area: 'Dade County', city: 'Miami', state: 'FL', country: 'USA', lat: 25.7617, lng: -80.1918 },
   { name: 'Orlando Citrus Ridge', area: 'Orange County', city: 'Orlando', state: 'FL', country: 'USA', lat: 28.5383, lng: -81.3792 },
+  { name: 'Tampa Bay Strawberry Belt', area: 'Hillsborough County', city: 'Tampa', state: 'FL', country: 'USA', lat: 27.9506, lng: -82.4572 },
+  { name: 'Belle Glade Everglades Agricultural Area', area: 'Palm Beach County', city: 'Belle Glade', state: 'FL', country: 'USA', lat: 26.6845, lng: -80.6676 },
+  { name: 'Immokalee Southwest Tomato Basin', area: 'Collier County', city: 'Immokalee', state: 'FL', country: 'USA', lat: 26.4187, lng: -81.4165 },
   { name: 'Atlanta Piedmont Loam', area: 'Fulton County', city: 'Atlanta', state: 'GA', country: 'USA', lat: 33.7490, lng: -84.3880 },
+  { name: 'Tifton Coastal Plain Peanut Hub', area: 'Tift County', city: 'Tifton', state: 'GA', country: 'USA', lat: 31.4505, lng: -83.5085 },
+  { name: 'Albany Flint River Pecan Groves', area: 'Dougherty County', city: 'Albany', state: 'GA', country: 'USA', lat: 31.5785, lng: -84.1557 },
   { name: 'Nashville Highland Rim Ag Basin', area: 'Davidson County', city: 'Nashville', state: 'TN', country: 'USA', lat: 36.1627, lng: -86.7816 },
+  { name: 'Memphis Mid-South Cotton & Soy Hub', area: 'Shelby County', city: 'Memphis', state: 'TN', country: 'USA', lat: 35.1495, lng: -90.0490 },
   { name: 'Raleigh Research Triangle Piedmont', area: 'Wake County', city: 'Raleigh', state: 'NC', country: 'USA', lat: 35.7796, lng: -78.6382 },
+  { name: 'Columbia Midlands Ag Basin', area: 'Richland County', city: 'Columbia', state: 'SC', country: 'USA', lat: 34.0007, lng: -81.0348 },
+  { name: 'Greenville Mississippi Delta Alluvium', area: 'Washington County', city: 'Greenville', state: 'MS', country: 'USA', lat: 33.4107, lng: -91.0618 },
+  { name: 'Jackson Pearl River Basin', area: 'Hinds County', city: 'Jackson', state: 'MS', country: 'USA', lat: 32.2988, lng: -90.1848 },
+  { name: 'Stuttgart Rice Capital of the World', area: 'Arkansas County', city: 'Stuttgart', state: 'AR', country: 'USA', lat: 34.5004, lng: -91.5529 },
+  { name: 'Little Rock Arkansas River Bottomland', area: 'Pulaski County', city: 'Little Rock', state: 'AR', country: 'USA', lat: 34.7465, lng: -92.2896 },
 
   // Mountain West & Pacific Northwest
   { name: 'Denver High Plains Loess', area: 'South Platte Basin', city: 'Denver', state: 'CO', country: 'USA', lat: 39.7392, lng: -104.9903 },
+  { name: 'Greeley Weld County Prime Ag Basin', area: 'Weld County', city: 'Greeley', state: 'CO', country: 'USA', lat: 40.4233, lng: -104.7091 },
   { name: 'Phoenix Salt River Valley Arid Basin', area: 'Maricopa County', city: 'Phoenix', state: 'AZ', country: 'USA', lat: 33.4484, lng: -112.0740 },
+  { name: 'Yuma Winter Salad Bowl of America', area: 'Yuma County', city: 'Yuma', state: 'AZ', country: 'USA', lat: 32.6927, lng: -114.6277 },
+  { name: 'Tucson Santa Cruz Desert Basin', area: 'Pima County', city: 'Tucson', state: 'AZ', country: 'USA', lat: 32.2226, lng: -110.9747 },
+  { name: 'Albuquerque Middle Rio Grande', area: 'Bernalillo County', city: 'Albuquerque', state: 'NM', country: 'USA', lat: 35.0844, lng: -106.6504 },
+  { name: 'Las Cruces Mesilla Valley Chile', area: 'Doña Ana County', city: 'Las Cruces', state: 'NM', country: 'USA', lat: 32.3199, lng: -106.7637 },
   { name: 'Boise Snake River Plain', area: 'Ada County', city: 'Boise', state: 'ID', country: 'USA', lat: 43.6150, lng: -116.2023 },
+  { name: 'Twin Falls Magic Valley Ag Hub', area: 'Twin Falls County', city: 'Twin Falls', state: 'ID', country: 'USA', lat: 42.5630, lng: -114.4608 },
   { name: 'Yakima Valley Apple Orchards', area: 'Yakima Basin', city: 'Yakima', state: 'WA', country: 'USA', lat: 46.6021, lng: -120.5059 },
+  { name: 'Wenatchee Apple Capital of the World', area: 'Chelan County', city: 'Wenatchee', state: 'WA', country: 'USA', lat: 47.4235, lng: -120.3103 },
+  { name: 'Spokane Inland Empire Dryland Wheat', area: 'Spokane County', city: 'Spokane', state: 'WA', country: 'USA', lat: 47.6588, lng: -117.4260 },
   { name: 'Seattle Puget Sound Basin', area: 'King County', city: 'Seattle', state: 'WA', country: 'USA', lat: 47.6062, lng: -122.3321 },
   { name: 'Portland Willamette Valley Alluvium', area: 'Willamette River', city: 'Portland', state: 'OR', country: 'USA', lat: 45.5152, lng: -122.6784 },
+  { name: 'Salem Mid-Willamette Vegetable Basin', area: 'Marion County', city: 'Salem', state: 'OR', country: 'USA', lat: 44.9429, lng: -123.0351 },
+  { name: 'Eugene Southern Willamette Ag', area: 'Lane County', city: 'Eugene', state: 'OR', country: 'USA', lat: 44.0521, lng: -123.0868 },
 
   // Northeast & Mid-Atlantic
-  { name: 'New York Hudson Valley Farmland', area: 'Hudson Basin', city: 'New York', state: 'NY', country: 'USA', lat: 40.7128, lng: -74.0060 },
+  { name: 'Lancaster County Amish Farmlands', area: 'Piedmont Basin', city: 'Lancaster', state: 'PA', country: 'USA', lat: 40.0379, lng: -76.3055 },
   { name: 'Philadelphia Piedmont Farmlands', area: 'Delaware Valley', city: 'Philadelphia', state: 'PA', country: 'USA', lat: 39.9526, lng: -75.1652 },
+  { name: 'New York Hudson Valley Farmland', area: 'Hudson Basin', city: 'New York', state: 'NY', country: 'USA', lat: 40.7128, lng: -74.0060 },
+  { name: 'Rochester Genesee River Valley', area: 'Monroe County', city: 'Rochester', state: 'NY', country: 'USA', lat: 43.1566, lng: -77.6088 },
+  { name: 'Traverse City Cherry Capital', area: 'Grand Traverse County', city: 'Traverse City', state: 'MI', country: 'USA', lat: 44.7631, lng: -85.6206 },
+  { name: 'Grand Rapids Fruit Ridge', area: 'Kent County', city: 'Grand Rapids', state: 'MI', country: 'USA', lat: 42.9634, lng: -85.6681 },
   { name: 'Boston Coastal Agriculture', area: 'Suffolk County', city: 'Boston', state: 'MA', country: 'USA', lat: 42.3601, lng: -71.0589 },
   { name: 'Washington DC Potomac Watershed', area: 'Potomac Basin', city: 'Washington', state: 'DC', country: 'USA', lat: 38.9072, lng: -77.0369 },
 
@@ -647,8 +698,14 @@ function generateUserQueriedRecommendation(query, location, soilUnit, weather, c
   // ---------------------------------------------------------------------------
   // TIER 2: TOPICAL AGRONOMIC REASONING
   // ---------------------------------------------------------------------------
+  // 1. Rain / Storm / Precipitation / Forecast
+  if (/\b(rain\w*|storm\w*|precip\w*|forecast|weather)\b/i.test(q)) {
+    const rainVol = Math.round(Math.max(0.1, w.rainForecastInches || 0.25) * 27154 * acres);
+    rec = {
+      id: `ai-user-${Date.now()}`,
+      priority: 'ADVISORY',
       category: 'Weather Synchronization',
-      title: `Precipitation Hold: Capture Natural Rainfall (${w.rainForecastInches}")`,
+      title: `Precipitation Hold: Capture Natural Rainfall (${w.rainForecastInches || 0.25}")`,
       summary: `In response to your query: Live forecasts for ${locName} predict ${w.rainForecastInches}" of rainfall within 24 hours. Pre-storm irrigation risks soil supersaturation, root hypoxia, and nutrient runoff.`,
       scientificRationale: `Meteoric water is virtually salt-free and delivers natural dissolved nitrogen. Suspending automated well pumps maximizes soil storage capacity for incoming rainfall.`,
       suggestedAction: `Activate 36-hour automated pump hold across all ${acres} acres. Re-verify root zone VWC after storm passage before resuming schedule.`,
@@ -944,11 +1001,14 @@ const server = http.createServer(async (req, res) => {
     const query = (parsedUrl.query.q || '').trim();
     if (!query) return sendJson(400, { error: 'Missing search query parameter ?q=' });
 
-    // Tier 1: Coordinate input detection (e.g. "30.267, -97.743")
-    const coordMatch = query.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
+    // Tier 1: Flexible Coordinate input detection (e.g. "30.267, -97.743", "30.267°N 97.743°W")
+    const coordMatch = query.match(/([-+]?\d+\.?\d*)[°\s,NS]*[,;\s]+([-+]?\d+\.?\d*)[°\s,EW]*/i);
     if (coordMatch) {
-      const lat = parseFloat(coordMatch[1]);
-      const lng = parseFloat(coordMatch[2]);
+      let lat = parseFloat(coordMatch[1]);
+      let lng = parseFloat(coordMatch[2]);
+      if (lat < -60 && lng > 20 && lng < 60) {
+        const temp = lat; lat = lng; lng = temp;
+      }
       if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
         const rev = approximateReverseGeocode(lat, lng);
         return sendJson(200, {
@@ -966,14 +1026,18 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Tier 2: Search local global index
+    // Tier 2: Instant search across local global index
     const normQ = query.toLowerCase();
     const localMatches = GLOBAL_LOCATION_INDEX.filter(item => 
       item.name.toLowerCase().includes(normQ) ||
       (item.city && item.city.toLowerCase().includes(normQ)) ||
-      (item.state && item.state.toLowerCase() === normQ) ||
+      (item.state && (item.state.toLowerCase().includes(normQ) || item.state.toLowerCase() === normQ)) ||
       (item.area && item.area.toLowerCase().includes(normQ))
     );
+
+    if (localMatches.length > 0) {
+      return sendJson(200, { success: true, results: localMatches.slice(0, 6) });
+    }
 
     // Tier 3: Attempt live OpenStreetMap Nominatim Geocoding if network accessible
     try {
