@@ -1,0 +1,21 @@
+{
+  "name": "farm-flow",
+  "version": "2.0.0",
+  "description": "Farm-Flow: Precision Water Quantity Optimization & USDA Soil Science Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "server": "node server.js"
+  },
+  "keywords": [
+    "agtech",
+    "water-optimization",
+    "usda-soil",
+    "hydrology",
+    "cleveland-county",
+    "react-swift"
+  ],
+  "author": "Farm-Flow Team",
+  "license": "MIT"
+}

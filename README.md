@@ -79,19 +79,57 @@ Farm-Flow computes the exact additional gallonage required to flush toxic salts 
 
 ---
 
-## 📱 How to Run & Explore
+## 🚀 How to Run with the Live Backend Server
 
-### Option 1: Mobile React Swift App (Primary Interface)
-Open [`index.html`](file:///Users/john.vianney.ssennono-1/Desktop/Nanoflow/index.html) in your browser:
-* Explore the interactive **Google Satellite Map** with Cleveland County parcels.
-* View the **Water Volume & Salinity** tab to experiment with live moisture and salinity sliders.
-* Open the **AI Agent** tab to test the **Implement** vs **Ignore** buttons and conversational chat.
-* Switch between **iPhone 16 Pro** view and **Cross-Platform / iPad** view via the top toggle.
+### Quick Start (Recommended)
 
-### Option 2: Visual Node-RED / Zapier Automation Engine
-Open [`automation-builder.html`](file:///Users/john.vianney.ssennono-1/Desktop/Nanoflow/automation-builder.html) in your browser:
-* Visual drag-and-drop workflow canvas with animated SVG water flow wires.
-* Virtual hardware rack with live WiseConn valves, VFD pumps, and OWRB water ledger.
+1. Open a terminal in the project directory:
+   ```bash
+   cd c:\Users\krish\Documents\farm-flow
+   npm start
+   ```
+   *(Or simply `node server.js` — zero external npm dependencies required!)*
+
+2. Open your web browser at:
+   * **React Swift Mobile App (Primary Interface)**: [http://localhost:3000](http://localhost:3000)
+   * **Visual Node-RED Automation Engine**: [http://localhost:3000/automation-builder.html](http://localhost:3000/automation-builder.html)
+   * **Live Telemetry REST API**: [http://localhost:3000/api/telemetry](http://localhost:3000/api/telemetry)
+   * **Health Check**: [http://localhost:3000/api/health](http://localhost:3000/api/health)
+
+---
+
+## 📍 1. Dynamic Data Pulled Based on Current Location
+
+* **Automatic GPS Geolocation**: On initial load, the app requests the farmer's current GPS position via `navigator.geolocation.getCurrentPosition()`.
+* **Interactive "📍 Locate Me" Button**: Instantly re-queries current coordinates, centers the Leaflet satellite map with a high-visibility pulsing GPS beacon, and updates parcel naming.
+* **Live Environmental Telemetry**: Fetches real-time temperature (°F), relative humidity, precipitation, 24-hour rainfall forecast, wind speed, and FAO-56 reference evapotranspiration ($ET_0$).
+* **Procedural & USDA Soil Survey Mapping**: Resolves USDA Soil Taxonomy (sand, silt, clay fractions, bulk density, permeability, infiltration rate, available water capacity, and pedon horizons) for coordinates worldwide, matching high-resolution NRCS survey units in Oklahoma.
+* **Global Geocoding Search**: Enter any city, state, or address (e.g. *"Austin, TX"*, *"Fresno, CA"*, *"Norman, OK"*) to pan the satellite GIS map and pull real-time agricultural telemetry.
+
+---
+
+## ⚙️ 2. Full Working Node.js Backend Server (`server.js`)
+
+Built directly with Node.js standard libraries (`node:http`, `node:fs`, `node:path`, `node:url`):
+* `GET /api/health` — Service status, uptime, version.
+* `GET /api/location/current` — Network/IP geolocation detection with regional coordinate fallback.
+* `GET /api/location/search?q=...` — Search geocoding engine for agricultural parcels.
+* `GET /api/telemetry?lat=...&lng=...&acres=...` — Complete unified telemetry pipeline: weather, USDA soil pedon, live moisture, salinity, TAW, RAW, leaching requirements, and AI recommendations.
+* `GET /api/journal` & `POST /api/journal` — File-persisted Decision Journal recording implemented and ignored decisions.
+* `GET /api/hardware/status` — Virtual equipment telemetry (valves 1-4, VFD pump RPM, pressure PSI, OWRB water permit balance).
+* `POST /api/ai/chat` — Conversational agronomist assistant with soil science context.
+
+---
+
+## 📱 3. Interactive Swift HIG Experience & Seamless Navigation
+
+* **Fixed "Switch to Swift React App" Navigation**:
+  * Inlined Babel compilation inside `index.html` eliminates browser `file://` CORS restrictions, ensuring the app opens with zero blank screens under both local file execution and HTTP server hosting.
+  * Preserved Leaflet map container across bottom tab switching with automatic `map.invalidateSize()` calls to prevent gray blank maps.
+* **1-Click Recommendation Implementation**: Shows animated iOS Toast banner, updates recommendation status badge, records action in the journal, and triggers hardware simulation.
+* **Action Sheet Modal for Dismissal**: iOS-styled action sheet with one-tap farmer operational reasons (*Rain forecasted in 24h*, *Peak electricity rates*, *Field cultivation in progress*, *Manual core inspection*).
+* **Interactive Chat Assistant**: Suggestion prompt chips for quick 1-tap inquiries (*"Root zone water?"*, *"Salinity impact?"*, *"Rain forecast?"*, *"Salt leaching?"*).
+* **Hydrology Simulations**: Quick 1-tap simulation buttons for *+1.2" Rain Event*, *Heatwave Drought*, and *Reset to Baseline*.
 
 ---
 
