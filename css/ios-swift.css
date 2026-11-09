@@ -1450,3 +1450,140 @@ body {
   gap: 4px;
   margin-top: 4px;
 }
+
+/* 12. Quick Agricultural Region Presets Bar */
+.region-preset-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 10px 0;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.region-preset-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.region-preset-pill {
+  background: rgba(14, 30, 56, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #bae6fd;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.region-preset-pill:hover {
+  background: rgba(2, 132, 199, 0.25);
+  border-color: #38bdf8;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.region-preset-pill.active {
+  background: linear-gradient(135deg, #1d4ed8, #0284c7);
+  border-color: #38bdf8;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+/* 13. Map Coordinate & Elevation Footer Bar */
+.map-coords-pill {
+  background: rgba(8, 17, 32, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: #93c5fd;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.map-coords-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+/* 14. Soil Series Selector Dropdown */
+.soil-series-select {
+  background: rgba(8, 17, 32, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  color: #e0f2fe;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+}
+.soil-series-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+/* 15. Inbuilt Calculation Badges & Markdown Formatting in Chat */
+.rec-calc-badge {
+  font-size: 10px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #6ee7b7;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.chat-bubble h3 {
+  margin: 0 0 6px 0;
+  font-size: 12.5px;
+  color: #38bdf8;
+}
+
+.chat-bubble ul {
+  margin: 4px 0;
+  padding-left: 16px;
+}
+
+.chat-bubble li {
+  margin-bottom: 3px;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* Mobile Screen Polish */
+@media (max-width: 480px) {
+  .device-frame-iphone {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    min-height: 100vh;
+  }
+  .app-viewport-wrapper {
+    padding: 0 !important;
+  }
+  .map-viewport-container {
+    height: 240px !important;
+  }
+  .ios-scroll-content {
+    padding: 10px 12px 90px 12px !important;
+  }
+}

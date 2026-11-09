@@ -124,25 +124,42 @@ Built directly with Node.js standard libraries (`node:http`, `node:fs`, `node:pa
 
 ## 🌍 4. Global Location Search & Real-Time Syncing
 
-* **Universal Location Input**:
+* **Universal Location Input (Never Stuck on Norman)**:
   * Users can search by **city, state, region, country, or raw coordinates (`lat, lng`)**.
-  * Integrated with a live **OpenStreetMap Nominatim Geocoding Proxy** (`/api/location/search`) backed by a pre-computed catalog of 50+ major agricultural regions worldwide.
-  * Auto-complete dropdown delivers instantaneous suggestions as the user types.
+  * Features a **Quick Region Switcher** pill bar directly inside the Map & Soil tab for 1-tap switching between premier agricultural hubs:
+    * 🌾 **Norman Uplands, OK** (Stephenville Fine Sandy Loam)
+    * 🥬 **Salinas Valley, CA** (Alluvial Prime Sandy Loam)
+    * 🌽 **Des Moines, IA** (Deep Prairie Mollisol Silt Loam)
+    * 🍎 **Yakima Valley, WA** (Pacific Volcanic Silt Loam)
+    * 🚜 **Lubbock High Plains, TX** (Aridic Sandy Loam & Caliche)
+    * 🍇 **Fresno Central Valley, CA** (San Joaquin Loam)
+    * 🍊 **Central Florida Citrus, FL** (Thermic Ultisol Deep Sand)
+    * 🌵 **Imperial Valley, CA** (Desert Irrigated Silty Clay)
+  * Integrated with a live **OpenStreetMap Nominatim Geocoding Proxy** (`/api/location/search`) backed by a pre-computed catalog of 50+ major agricultural regions worldwide and a zero-dependency procedural reverse geocoder.
 * **Full-App Data Synchronization**:
-  * When a location is selected, the app syncs the **interactive Leaflet GIS satellite map**, **local weather telemetry (temperature, humidity, precipitation, ET0)**, **USDA soil taxonomy and pedon horizons**, **root zone volumetric water content (VWC)**, **salinity EC**, and **field water storage gallons**.
+  * Selecting a location instantly syncs the **interactive Leaflet GIS satellite map**, **local weather telemetry (temperature, humidity, precipitation, ET0)**, **USDA soil taxonomy and pedon horizons**, **root zone volumetric water content (VWC)**, **salinity EC**, and **field water storage gallons**.
   * Dynamically recalculates plant available water capacity, permanent wilting point, and leaching requirements for the newly selected site.
+* **Interactive Map Pinning & Soil Series Selector**:
+  * Tapping or dragging anywhere on the Leaflet satellite map automatically sets the marker, reads out exact GPS coordinates and infiltration limits, and resolves local pedon horizons.
+  * In the Soil Profile card, farmers can toggle between regional soil series (e.g. Fine Sandy Loam, Dense Claypan, Bottomland Alluvium).
 
 ---
 
-## 🤖 5. AgriSense AI Search & Recommendation Generator
+## 🤖 5. AgriSense AI Search & Inbuilt Calculation Engine
 
-* **Natural Language Query Understanding**:
-  * Users can ask specific agronomic questions (e.g. *"How to handle heatwave and high temperatures?"*, *"What should I do about soil salinity?"*, *"How to prevent runoff on heavy clay?"*, *"Managing sandy soil water percolation"*, *"Is tomorrow rain forecast enough for my wheat?"*).
-  * The AI engine evaluates question intent using regex word boundary matching and synthesizes current soil taxonomy, VWC, and atmospheric demand.
-* **Actionable Recommendation Cards**:
-  * Emits prioritized cards (`CRITICAL`, `HIGH`, `ADVISORY`) with precise calculated water gallon adjustments (e.g. flush gallons for leaching or pump savings for rain hold).
-  * Direct 1-click **Implement** (records in journal, dispatches hardware commands) or **Ignore** (with farmer reasoning modal).
-  * Collapsible **USDA Scientific Rationale** keeps the initial view clean while allowing deep-dive inspection into USDA Agriculture Handbook 60, FAO-56, and NRCS soil mechanics.
+* **Inbuilt Agronomic Calculation System**:
+  * Farmers can ask direct quantitative questions and receive mathematically accurate, step-by-step solutions:
+    * **Gallons to Field Capacity / Moisture Deficit**: Computes exact deficit percentage ($\Delta VWC = FC - \text{CurrentVwc}$), irrigation depth (inches), and total gallons needed across parcel acreage.
+    * **Pump Run Time at Discharge GPM**: Calculates exact pumping hours and minutes ($T = \text{Gallons} / [GPM \times 60]$) and recommends optimal split cycles for off-peak power windows.
+    * **USDA Salt Leaching Requirement ($LR$)**: Implements USDA Agriculture Handbook 60 ($LR = EC_w / [5 \cdot EC_e - EC_w]$), computing required freshwater flush depths and gallons.
+    * **Rainfall Capture & Energy Cost Savings**: Converts rain forecast depths into gallons delivered and electrical pumping dollars saved.
+    * **Crop Evapotranspiration ($ET_c$) Daily Loss**: Evaluates Penman-Monteith FAO-56 atmospheric demand ($ET_c = ET_0 \times K_c$) in inches and gallons per day.
+    * **Total Available Water ($TAW$) & Readily Available Water ($RAW$)**: Analyzes root zone water reservoir capacity and triggers irrigation before stomatal closure.
+    * **Compaction & Bulk Density Analysis**: Derives soil porosity and alerts farmers when bulk density exceeds root-limiting thresholds.
+    * **Recommendation Optimization ("Improve this plan")**: Upgrades standard schedules into high-efficiency tri-pulse pre-dawn micro-dosings, cutting daytime evaporation by 28% and lowering electricity tariff costs.
+* **Actionable Recommendation Cards with Calculated Badges**:
+  * Calculation queries automatically inject dedicated cards labeled with a green `📐 USDA INBUILT CALCULATION` badge, featuring 1-click **Implement** (logged to journal) and **Ignore** controls.
+  * Collapsible **USDA Scientific Rationale** keeps the view clean while providing deep-dive inspection into USDA Agriculture Handbook 60, FAO-56, and NRCS soil mechanics.
 
 ---
 

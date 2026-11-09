@@ -134,13 +134,51 @@ function FarmFlowReactApp() {
   const searchDebounceTimer = useRef(null);
 
   // ----------------------------------------------------------------------------
-  // 2. TOAST HELPER
+  // 2. TOAST & FORMATTING HELPERS
   // ----------------------------------------------------------------------------
   const showToast = (msg, duration = 3500) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(prev => (prev === msg ? null : prev));
     }, duration);
+  };
+
+  const renderFormattedText = (text) => {
+    if (!text) return null;
+    const lines = text.split('\n');
+    return lines.map((line, idx) => {
+      if (line.startsWith('### ')) {
+        return <h3 key={idx} style={{ margin: '4px 0 6px 0', fontSize: '13px', color: '#38bdf8', fontWeight: 800 }}>{line.replace('### ', '')}</h3>;
+      }
+      if (line.startsWith('* ')) {
+        const content = line.replace('* ', '');
+        const parts = content.split(/(\*\*.*?\*\*)/g);
+        return (
+          <div key={idx} style={{ display: 'flex', gap: '6px', fontSize: '11.5px', margin: '3px 0', lineHeight: 1.45 }}>
+            <span style={{ color: '#38bdf8' }}>&bull;</span>
+            <div>
+              {parts.map((p, pIdx) => {
+                if (p.startsWith('**') && p.endsWith('**')) {
+                  return <strong key={pIdx} style={{ color: '#fff' }}>{p.slice(2, -2)}</strong>;
+                }
+                return p;
+              })}
+            </div>
+          </div>
+        );
+      }
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      return (
+        <div key={idx} style={{ fontSize: '12px', margin: '2px 0', lineHeight: 1.45 }}>
+          {parts.map((p, pIdx) => {
+            if (p.startsWith('**') && p.endsWith('**')) {
+              return <strong key={pIdx} style={{ color: '#fff' }}>{p.slice(2, -2)}</strong>;
+            }
+            return p;
+          })}
+        </div>
+      );
+    });
   };
 
   // ----------------------------------------------------------------------------
@@ -194,24 +232,57 @@ function FarmFlowReactApp() {
       console.log('Backend telemetry bypassed, using client resolver:', err.message);
     }
 
-    // Client-side fallback
+    // Client-side fallback (Zero-dependency geocoding and soil resolver)
     if (window.USDA_CLEVELAND_SOIL_DATA) {
-      let closest = window.USDA_CLEVELAND_SOIL_DATA.sampleLocations[0];
-      let minD = 999;
-      window.USDA_CLEVELAND_SOIL_DATA.sampleLocations.forEach(loc => {
-        const d = Math.hypot(loc.lat - lat, loc.lng - lng);
-        if (d < minD) { minD = d; closest = loc; }
-      });
-      const u = window.USDA_CLEVELAND_SOIL_DATA.soilUnits[closest.soilUnitKey];
-      if (u) setSelectedSoilUnit(u);
+      const uData = window.USDA_CLEVELAND_SOIL_DATA;
+      const rev = (uData.approximateReverseGeocode)
+        ? uData.approximateReverseGeocode(lat, lng)
+        : { name: customName || `Parcel (${lat.toFixed(3)}°, ${lng.toFixed(3)}°)`, area: `Coordinates (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)` };
+      const soil = (uData.resolveSoilForCoordinates)
+        ? uData.resolveSoilForCoordinates(lat, lng)
+        : selectedSoilUnit;
+      const weather = (uData.calculateLiveWeather)
+        ? uData.calculateLiveWeather(lat, lng)
+        : liveWeather;
 
       setSelectedLocation({
-        ...closest,
+        id: `loc-${lat.toFixed(3)}-${lng.toFixed(3)}`,
+        name: customName || rev.name,
+        area: rev.area || `${rev.city || ''}, ${rev.state || ''}`,
+        city: rev.city || 'Agricultural District',
+        state: rev.state || '',
+        country: rev.country || 'USA',
         lat: Number(lat.toFixed(4)),
         lng: Number(lng.toFixed(4)),
-        name: customName || `Location (${lat.toFixed(3)}°, ${lng.toFixed(3)}°)`
+        soilUnitKey: soil.id
       });
-      showToast(`📍 Location set: ${customName || 'Active Parcel'}`);
+
+      setSelectedSoilUnit(soil);
+      setLiveWeather(weather);
+      if (weather.suggestedMoistureVwc) setCurrentVwc(weather.suggestedMoistureVwc);
+      if (weather.suggestedSalinityEc) setSalinityEc(weather.suggestedSalinityEc);
+
+      if (window.AIAgentEngine && window.AIAgentEngine.evaluateLocation) {
+        const localRecs = window.AIAgentEngine.evaluateLocation(
+          { lat, lng, name: customName || rev.name },
+          soil,
+          weather.suggestedMoistureVwc || currentVwc,
+          weather.suggestedSalinityEc || salinityEc,
+          fieldAcres
+        );
+        if (localRecs && localRecs.length > 0) setRecommendations(localRecs);
+      }
+
+      // Pan Leaflet Map smoothly
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo([lat, lng], 13, { duration: 1.2 });
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+          markerRef.current.setPopupContent(`<b>${customName || rev.name}</b><br/>${soil.name}`).openPopup();
+        }
+      }
+
+      showToast(`📍 Synced location: ${customName || rev.area}`);
     }
     setIsDetectingLocation(false);
   };
@@ -279,13 +350,14 @@ function FarmFlowReactApp() {
         // Fallback
       }
 
-      // Check presets locally if backend fails
+      // Check global agricultural presets locally
       if (window.USDA_CLEVELAND_SOIL_DATA) {
         const q = val.toLowerCase();
-        const matches = window.USDA_CLEVELAND_SOIL_DATA.sampleLocations
-          .filter(l => l.name.toLowerCase().includes(q) || l.area.toLowerCase().includes(q))
-          .map(l => ({ name: l.name, area: l.area, lat: l.lat, lng: l.lng }));
-        setSearchSuggestions(matches);
+        const pool = (window.USDA_CLEVELAND_SOIL_DATA.globalSampleLocations || []).concat(window.USDA_CLEVELAND_SOIL_DATA.sampleLocations || []);
+        const matches = pool
+          .filter(l => l.name.toLowerCase().includes(q) || (l.area && l.area.toLowerCase().includes(q)) || (l.city && l.city.toLowerCase().includes(q)) || (l.state && l.state.toLowerCase().includes(q)))
+          .map(l => ({ name: l.name, area: l.area || `${l.city || ''}, ${l.state || ''}`, lat: l.lat, lng: l.lng }));
+        setSearchSuggestions(matches.slice(0, 5));
         setShowSuggestions(matches.length > 0);
       }
     }, 280);
@@ -321,10 +393,39 @@ function FarmFlowReactApp() {
     const m = searchQuery.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
     if (m) {
       fetchLocationData(parseFloat(m[1]), parseFloat(m[2]), `Coords (${parseFloat(m[1]).toFixed(3)}°, ${parseFloat(m[2]).toFixed(3)}°)`);
-    } else {
-      showToast(`Locating parcel for: ${searchQuery}`);
-      fetchLocationData(35.2226, -97.4395, searchQuery);
+      return;
     }
+
+    // Check client global locations index
+    if (window.USDA_CLEVELAND_SOIL_DATA && window.USDA_CLEVELAND_SOIL_DATA.globalSampleLocations) {
+      const q = searchQuery.toLowerCase();
+      const match = window.USDA_CLEVELAND_SOIL_DATA.globalSampleLocations.find(l =>
+        l.name.toLowerCase().includes(q) || l.area.toLowerCase().includes(q) || l.city.toLowerCase().includes(q) || l.state.toLowerCase().includes(q)
+      );
+      if (match) {
+        fetchLocationData(match.lat, match.lng, match.area);
+        return;
+      }
+    }
+
+    // Direct OpenStreetMap geocoding fallback
+    try {
+      const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(searchQuery)}`);
+      if (osmRes.ok) {
+        const osmData = await osmRes.json();
+        if (osmData && osmData.length > 0) {
+          const p = osmData[0];
+          fetchLocationData(parseFloat(p.lat), parseFloat(p.lon), p.display_name.split(',').slice(0, 2).join(','));
+          return;
+        }
+      }
+    } catch (osmErr) {
+      console.log('Client OSM geocode bypassed:', osmErr);
+    }
+
+    // Procedural parcel location
+    showToast(`Locating parcel for: ${searchQuery}`);
+    fetchLocationData(36.6777, -121.6555, searchQuery);
   };
 
   // ----------------------------------------------------------------------------
@@ -737,6 +838,38 @@ function FarmFlowReactApp() {
                 -------------------------------------------------------------- */}
             <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
               
+              {/* Quick Agricultural Region Presets Bar */}
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '11px', color: '#93c5fd', fontWeight: 600 }}>
+                  <span>🌍 Quick Region Switcher:</span>
+                  <span style={{ fontSize: '10px', color: '#38bdf8' }}>Tap to fly map &amp; sync soil</span>
+                </div>
+                <div className="region-preset-bar">
+                  {[
+                    { name: '🌾 Norman, OK', lat: 35.2226, lng: -97.4395, area: 'Norman Uplands, OK' },
+                    { name: '🥬 Salinas, CA', lat: 36.6777, lng: -121.6555, area: 'Salinas Valley, CA' },
+                    { name: '🌽 Des Moines, IA', lat: 41.5868, lng: -93.6250, area: 'Corn Belt, IA' },
+                    { name: '🍎 Yakima, WA', lat: 46.6021, lng: -120.5059, area: 'Yakima Valley, WA' },
+                    { name: '🚜 Lubbock, TX', lat: 33.5779, lng: -101.8552, area: 'High Plains, TX' },
+                    { name: '🍇 Fresno, CA', lat: 36.7468, lng: -119.7726, area: 'Central Valley, CA' },
+                    { name: '🍊 Orlando, FL', lat: 28.5383, lng: -81.3792, area: 'Citrus Ridge, FL' },
+                    { name: '🌵 Imperial, CA', lat: 32.8473, lng: -115.5694, area: 'Imperial Valley, CA' }
+                  ].map((p, i) => {
+                    const isActive = Math.hypot(selectedLocation.lat - p.lat, selectedLocation.lng - p.lng) < 0.15;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`region-preset-pill ${isActive ? 'active' : ''}`}
+                        onClick={() => fetchLocationData(p.lat, p.lng, p.area)}
+                      >
+                        {p.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Satellite Map */}
               <div className="map-viewport-container" style={{ height: '270px', borderRadius: '16px', overflow: 'hidden' }}>
                 <div id="leaflet-soil-map" ref={mapContainerRef} style={{ width: '100%', height: '100%' }}></div>
@@ -751,6 +884,19 @@ function FarmFlowReactApp() {
                     </svg>
                   </button>
                 </div>
+              </div>
+
+              {/* Map Coordinates & Infiltration Footer Bar */}
+              <div className="map-coords-pill">
+                <span className="map-coords-text">
+                  📍 {selectedLocation.lat.toFixed(4)}°N, {Math.abs(selectedLocation.lng).toFixed(4)}°W
+                </span>
+                <span>
+                  Root Depth: {selectedSoilUnit.rootZoneDepthInches}" &bull; Infil: {selectedSoilUnit.infiltrationRateInHr}"/hr
+                </span>
+                <span style={{ color: '#bae6fd' }}>
+                  AWC: {selectedSoilUnit.availableWaterCapacityInIn}"/in
+                </span>
               </div>
 
               {/* Clean Soil Profile Card */}
@@ -802,6 +948,29 @@ function FarmFlowReactApp() {
                     <span className="metric-tile-val" style={{ fontSize: '15px' }}>{selectedSoilUnit.bulkDensityGcm3} g/cm³</span>
                     <span className="metric-tile-sub">Depth: {selectedSoilUnit.rootZoneDepthInches}"</span>
                   </div>
+                </div>
+
+                {/* Regional Soil Series Selector */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(56, 189, 248, 0.18)' }}>
+                  <span style={{ fontSize: '11px', color: '#93c5fd', fontWeight: 600 }}>Soil Taxonomy Series:</span>
+                  <select
+                    className="soil-series-select"
+                    value={selectedSoilUnit.id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (window.USDA_CLEVELAND_SOIL_DATA && window.USDA_CLEVELAND_SOIL_DATA.soilUnits && window.USDA_CLEVELAND_SOIL_DATA.soilUnits[val]) {
+                        setSelectedSoilUnit(window.USDA_CLEVELAND_SOIL_DATA.soilUnits[val]);
+                        showToast(`Switched soil unit: ${window.USDA_CLEVELAND_SOIL_DATA.soilUnits[val].name}`);
+                      }
+                    }}
+                  >
+                    <option value={selectedSoilUnit.id}>📌 Active: {selectedSoilUnit.primaryTexture}</option>
+                    <option value="stephenville-harrah-newalla">Fine Sandy Loam (Stephenville)</option>
+                    <option value="renfrow-grainola-grant">Dense Clay & Silty Clay (Renfrow)</option>
+                    <option value="norge-teller-vanoss">Deep Loam & Silt Loam (Norge)</option>
+                    <option value="port-weswood">Bottomland Silt Alluvium (Port)</option>
+                    <option value="stephenville-littleaxe-darsil">Coarse Sandstone Ridge (Little Axe)</option>
+                  </select>
                 </div>
               </div>
 
@@ -1027,22 +1196,31 @@ function FarmFlowReactApp() {
                     </button>
                   </form>
 
-                  {/* Smart Prompt Chips */}
+                  {/* Smart Calculation & Prompt Chips */}
                   <div className="chat-suggestions-scroll" style={{ padding: '0 0 2px 0' }}>
-                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Protect crops from high heat and drought')}>
-                      🌡️ Heatwave Protection
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How many gallons to reach field capacity on my parcel?')}>
+                      📐 Gallons to Field Capacity
                     </button>
-                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How to leach root salinity in sandy soil')}>
-                      🧪 Salinity Leaching
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Pump run time for 500 GPM well')}>
+                      ⏱️ 500 GPM Pump Time
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('USDA salt leaching requirement for my soil')}>
+                      🧪 Salt Leaching (LR)
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Water and cost savings from 0.5" rain forecast')}>
+                      🌧️ Rain Cost Savings
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Daily crop evapotranspiration water loss')}>
+                      ☀️ Daily ETc Loss
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How to improve this recommendation and save more')}>
+                      ⚡ Optimize Schedule
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Protect crops from high heat and drought')}>
+                      🌡️ Heatwave Shield
                     </button>
                     <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Prevent surface runoff on heavy clay')}>
                       🚜 Clay Runoff
-                    </button>
-                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Should I hold irrigation for incoming rain forecast')}>
-                      🌧️ Rain Hold
-                    </button>
-                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Water schedule for corn and wheat yield')}>
-                      🌽 Crop Water
                     </button>
                   </div>
                 </div>
@@ -1064,11 +1242,15 @@ function FarmFlowReactApp() {
                           </span>
                         </div>
 
-                        {rec.userGenerated && (
+                        {rec.isCalculated ? (
+                          <div className="rec-calc-badge">
+                            📐 USDA Inbuilt Calculation
+                          </div>
+                        ) : rec.userGenerated ? (
                           <div className="ai-query-badge">
                             ✨ AI Generated for: "{rec.queryAsked}"
                           </div>
-                        )}
+                        ) : null}
 
                         <div className="rec-body-text" style={{ fontSize: '12px', margin: '6px 0' }}>
                           {rec.summary}
@@ -1124,7 +1306,7 @@ function FarmFlowReactApp() {
                   })}
                 </div>
 
-                {/* Conversational Assistant */}
+                {/* Conversational Assistant & Calculation Chat */}
                 <div className="ai-chat-card" style={{ marginTop: '12px' }}>
                   <div className="card-header-row">
                     <div className="card-title-group">
@@ -1134,18 +1316,37 @@ function FarmFlowReactApp() {
                         </svg>
                       </div>
                       <div>
-                        <div className="card-title-text">AgriSense Chatbot</div>
+                        <div className="card-title-text">AgriSense Chatbot &amp; Calculator</div>
                         <div className="card-caption-text">{selectedLocation.area} Hydrology Assistant</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="chat-messages-container" style={{ maxHeight: '180px' }}>
+                  <div className="chat-messages-container" style={{ maxHeight: '220px' }}>
                     {chatMessages.map((msg, idx) => (
                       <div key={idx} className={`chat-bubble ${msg.sender === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
-                        {msg.text}
+                        {msg.sender === 'ai' ? renderFormattedText(msg.text) : msg.text}
                       </div>
                     ))}
+                  </div>
+
+                  {/* Quick Calculator Chips for Chat */}
+                  <div className="chat-suggestions-scroll" style={{ padding: '4px 0', borderTop: '1px solid rgba(56, 189, 248, 0.15)' }}>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How many gallons to reach field capacity on my parcel?')}>
+                      📐 Gallons Needed
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Calculate pump run time for 500 GPM')}>
+                      ⏱️ Pump Runtime
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('Calculate salt leaching volume for EC ' + salinityEc)}>
+                      🧪 Leaching Flush
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How much money saved if it rains 0.5 inches?')}>
+                      🌧️ Rain Savings
+                    </button>
+                    <button className="suggestion-pill" onClick={() => handleAISearchSubmit('How can I improve this recommendation?')}>
+                      ⚡ Improve Plan
+                    </button>
                   </div>
 
                   <form
@@ -1161,7 +1362,7 @@ function FarmFlowReactApp() {
                     <input
                       type="text"
                       className="chat-text-input"
-                      placeholder="Ask anything or request recommendations..."
+                      placeholder="Ask calculations (e.g. 'gallons needed', 'pump hours at 600 GPM')..."
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                     />

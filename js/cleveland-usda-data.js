@@ -423,6 +423,386 @@ window.USDA_CLEVELAND_SOIL_DATA = {
         extraWaterInches,
         needed: true
       };
+    },
+
+    /**
+     * Complete Agronomic Calculation Suite for Farmers
+     */
+    calcDeficitToFieldCapacity(currentVwc, fcVwc, rootDepthInches, acres) {
+      const deficitPercent = Math.max(0, +(fcVwc - currentVwc).toFixed(1));
+      const depthInches = +((deficitPercent / 100) * rootDepthInches).toFixed(2);
+      const totalGallons = Math.round(depthInches * 27154 * acres);
+      const acreInches = +(depthInches * acres).toFixed(2);
+      return { deficitPercent, depthInches, totalGallons, acreInches };
+    },
+
+    calcPumpRunTime(gallonsNeeded, pumpGpm = 450) {
+      const totalMinutes = Math.round(gallonsNeeded / Math.max(10, pumpGpm));
+      const hours = +(totalMinutes / 60).toFixed(1);
+      const recommendedSplits = hours > 8 ? 3 : hours > 4 ? 2 : 1;
+      const hoursPerSplit = +(hours / recommendedSplits).toFixed(1);
+      return { totalMinutes, hours, pumpGpm, recommendedSplits, hoursPerSplit };
+    },
+
+    calcTaWandRaw(awcInIn, rootDepthInches, acres, mad = 0.50) {
+      const tawInches = +(awcInIn * rootDepthInches).toFixed(2);
+      const rawInches = +(tawInches * mad).toFixed(2);
+      const tawGallons = Math.round(tawInches * 27154 * acres);
+      const rawGallons = Math.round(rawInches * 27154 * acres);
+      return { tawInches, rawInches, tawGallons, rawGallons, madPercent: Math.round(mad * 100) };
+    },
+
+    calcRainSavings(rainInches, acres, electricityCostPerGal = 0.00035) {
+      const gallonsDelivered = Math.round(rainInches * 27154 * acres);
+      const costSavedDollars = +(gallonsDelivered * electricityCostPerGal).toFixed(2);
+      return { gallonsDelivered, costSavedDollars, rainInches, acres };
+    },
+
+    calcDailyEtWaterLoss(et0, kc = 1.05, acres = 12.5) {
+      const etcInches = +(et0 * kc).toFixed(3);
+      const dailyLossGallons = Math.round(etcInches * 27154 * acres);
+      return { etcInches, dailyLossGallons, et0, kc, acres };
+    },
+
+    calcBulkDensityPorosity(bulkDensityGcm3, texture = 'Loam') {
+      const particleDensity = 2.65; // g/cm³ standard quartz
+      const porosityPercent = +((1 - (bulkDensityGcm3 / particleDensity)) * 100).toFixed(1);
+      const isCompacted = texture.toLowerCase().includes('clay') ? bulkDensityGcm3 > 1.45 : bulkDensityGcm3 > 1.60;
+      return { porosityPercent, bulkDensityGcm3, isCompacted };
     }
+  },
+
+  /**
+   * ----------------------------------------------------------------------------
+   * 4. GLOBAL AGRICULTURAL PRESETS & PROCEDURAL RESOLVERS
+   * ----------------------------------------------------------------------------
+   * Allows Farm-Flow to operate anywhere on Earth without getting stuck on Norman.
+   */
+  globalSampleLocations: [
+    {
+      id: 'norman-central',
+      name: 'Norman Research Farmland',
+      area: 'Norman Uplands, OK',
+      city: 'Norman',
+      state: 'Oklahoma',
+      country: 'USA',
+      lat: 35.2226,
+      lng: -97.4395,
+      soilUnitKey: 'stephenville-harrah-newalla',
+      crop: 'Winter Wheat & Specialty Pecan',
+      regionBadge: '🌾 Southern Plains'
+    },
+    {
+      id: 'salinas-valley-ca',
+      name: 'Salinas Valley Vegetable Basin',
+      area: 'Salinas River Valley, CA',
+      city: 'Salinas',
+      state: 'California',
+      country: 'USA',
+      lat: 36.6777,
+      lng: -121.6555,
+      soilUnitKey: 'salinas-alluvial-loam',
+      crop: 'Cool-Season Produce & Strawberries',
+      regionBadge: '🥬 Pacific Salad Bowl'
+    },
+    {
+      id: 'des-moines-ia',
+      name: 'Des Moines Prairie Corn Belt',
+      area: 'Raccoon River Basin, IA',
+      city: 'Des Moines',
+      state: 'Iowa',
+      country: 'USA',
+      lat: 41.5868,
+      lng: -93.6250,
+      soilUnitKey: 'midwest-prairie-mollisol',
+      crop: 'Corn & Soybean Rotations',
+      regionBadge: '🌽 Midwest Corn Belt'
+    },
+    {
+      id: 'yakima-valley-wa',
+      name: 'Yakima Valley Fruit & Hops',
+      area: 'Yakima River Basin, WA',
+      city: 'Yakima',
+      state: 'Washington',
+      country: 'USA',
+      lat: 46.6021,
+      lng: -120.5059,
+      soilUnitKey: 'yakima-volcanic-loam',
+      crop: 'Apples, Cherries & Hops',
+      regionBadge: '🍎 Pacific Northwest'
+    },
+    {
+      id: 'lubbock-high-plains-tx',
+      name: 'Lubbock High Plains Farmland',
+      area: 'Southern High Plains, TX',
+      city: 'Lubbock',
+      state: 'Texas',
+      country: 'USA',
+      lat: 33.5779,
+      lng: -101.8552,
+      soilUnitKey: 'high-plains-aridic-loam',
+      crop: 'Upland Cotton & Grain Sorghum',
+      regionBadge: '🚜 Texas High Plains'
+    },
+    {
+      id: 'fresno-central-valley-ca',
+      name: 'Fresno San Joaquin Valley',
+      area: 'Central Valley Basin, CA',
+      city: 'Fresno',
+      state: 'California',
+      country: 'USA',
+      lat: 36.7468,
+      lng: -119.7726,
+      soilUnitKey: 'fresno-alluvial-sandy-loam',
+      crop: 'Almonds, Pistachios & Wine Grapes',
+      regionBadge: '🍇 Central Valley'
+    },
+    {
+      id: 'central-florida-citrus-fl',
+      name: 'Central Ridge Citrus Groves',
+      area: 'Orange & Polk Counties, FL',
+      city: 'Orlando',
+      state: 'Florida',
+      country: 'USA',
+      lat: 28.5383,
+      lng: -81.3792,
+      soilUnitKey: 'florida-entisol-sand',
+      crop: 'Citrus Groves & Specialty Berries',
+      regionBadge: '🍊 Florida Ridge'
+    },
+    {
+      id: 'imperial-valley-ca',
+      name: 'Imperial Valley Desert Irrigation',
+      area: 'Salton Sea Basin, CA',
+      city: 'El Centro',
+      state: 'California',
+      country: 'USA',
+      lat: 32.8473,
+      lng: -115.5694,
+      soilUnitKey: 'imperial-desert-silty-clay',
+      crop: 'Winter Alfalfa & Forage',
+      regionBadge: '🌵 Desert Irrigated'
+    }
+  ],
+
+  /**
+   * Procedural USDA Soil Resolver for ANY location on Earth
+   */
+  resolveSoilForCoordinates(lat, lng) {
+    // 1. Cleveland County, OK check
+    if (lat >= 34.9 && lat <= 35.5 && lng >= -97.6 && lng <= -97.1) {
+      if (lng > -97.3) return this.soilUnits['stephenville-littleaxe-darsil'];
+      if (lat < 35.15) return this.soilUnits['port-weswood'];
+      if (lat > 35.3) return this.soilUnits['norge-teller-vanoss'];
+      if (lng < -97.48) return this.soilUnits['renfrow-grainola-grant'];
+      return this.soilUnits['stephenville-harrah-newalla'];
+    }
+
+    // 2. Regional agricultural biomes
+    const isAridWest = (lng >= -122 && lng <= -100 && lat >= 28 && lat <= 44);
+    const isMidwest = (lng >= -100 && lng <= -84 && lat >= 36 && lat <= 48);
+    const isSoutheast = (lng >= -92 && lng <= -75 && lat >= 26 && lat <= 36);
+    const isPacificNW = (lng >= -125 && lng <= -116 && lat >= 42 && lat <= 49);
+
+    if (isPacificNW) {
+      return {
+        id: `yakima-volcanic-loam-${lat.toFixed(2)}-${lng.toFixed(2)}`,
+        name: 'Pacific Volcanic Alluvial Silt Loam',
+        countySharePercent: 100,
+        primaryTexture: 'Volcanic Ash Silt Loam',
+        sandPercent: 32, siltPercent: 55, clayPercent: 13,
+        bulkDensityGcm3: 1.25,
+        permeabilityRating: 'Moderate to Rapid',
+        infiltrationRateInHr: 1.25,
+        availableWaterCapacityInIn: 0.22,
+        rootZoneDepthInches: 54,
+        permanentWiltingPointVwc: 7.5,
+        fieldCapacityVwc: 29.5,
+        salinitySensitivityThreshold: 1.8,
+        description: 'Prime volcanic ash and glacial outwash loam with superior moisture capacity. Ideal for high-value tree fruits and vineyards.',
+        horizons: [
+          { name: 'Ap (0-10 in)', depth: '0-10"', texture: 'Ash Silt Loam', color: 'Dark Grayish Brown (10YR 4/2)', ph: 6.8, om: '3.2%' },
+          { name: 'Bw (10-30 in)', depth: '10-30"', texture: 'Fine Silt Loam', color: 'Brown (10YR 4/3)', ph: 6.6, om: '1.2%' },
+          { name: 'C (30-54 in)', depth: '30-54"+', texture: 'Stratified Loam', color: 'Pale Brown (10YR 6/3)', ph: 7.0, om: '0.3%' }
+        ]
+      };
+    }
+
+    if (isMidwest) {
+      return {
+        id: `midwest-prairie-mollisol-${lat.toFixed(2)}-${lng.toFixed(2)}`,
+        name: 'Deep Prairie Silt Loam (Mollisol Benchmark)',
+        countySharePercent: 100,
+        primaryTexture: 'Deep Silt Loam',
+        sandPercent: 20, siltPercent: 56, clayPercent: 24,
+        bulkDensityGcm3: 1.30,
+        permeabilityRating: 'Moderate',
+        infiltrationRateInHr: 0.75,
+        availableWaterCapacityInIn: 0.22,
+        rootZoneDepthInches: 60,
+        permanentWiltingPointVwc: 8.5,
+        fieldCapacityVwc: 30.5,
+        salinitySensitivityThreshold: 2.2,
+        description: 'Dark, highly fertile grassland prairie Mollisol with world-class plant available water capacity. Sustains intensive row-crop grain production.',
+        horizons: [
+          { name: 'Ap (0-12 in)', depth: '0-12"', texture: 'Dark Silt Loam', color: 'Black (10YR 2/1)', ph: 6.5, om: '4.5%' },
+          { name: 'Bt1 (12-34 in)', depth: '12-34"', texture: 'Silty Clay Loam', color: 'Dark Brown (10YR 3/3)', ph: 6.4, om: '1.5%' },
+          { name: 'Bt2 (34-52 in)', depth: '34-52"', texture: 'Silt Loam', color: 'Brown (10YR 4/4)', ph: 6.8, om: '0.6%' },
+          { name: 'C (52-60 in)', depth: '52-60"+', texture: 'Glacial Till', color: 'Yellowish Brown (10YR 5/6)', ph: 7.2, om: '0.2%' }
+        ]
+      };
+    }
+
+    if (isAridWest) {
+      return {
+        id: `high-plains-aridic-loam-${lat.toFixed(2)}-${lng.toFixed(2)}`,
+        name: 'Aridic Sandy Loam with Caliche Substratum',
+        countySharePercent: 100,
+        primaryTexture: 'Fine Sandy Loam over Caliche',
+        sandPercent: 64, siltPercent: 22, clayPercent: 14,
+        bulkDensityGcm3: 1.48,
+        permeabilityRating: 'Moderate to Rapid',
+        infiltrationRateInHr: 1.35,
+        availableWaterCapacityInIn: 0.13,
+        rootZoneDepthInches: 38,
+        permanentWiltingPointVwc: 6.0,
+        fieldCapacityVwc: 19.0,
+        salinitySensitivityThreshold: 1.9,
+        description: 'Semi-arid upland soil with calcium carbonate accumulation. Fast infiltration with susceptibility to osmotic salt stress.',
+        horizons: [
+          { name: 'Ap (0-8 in)', depth: '0-8"', texture: 'Fine Sandy Loam', color: 'Brown (7.5YR 4/4)', ph: 7.4, om: '1.1%' },
+          { name: 'Bt (8-24 in)', depth: '8-24"', texture: 'Sandy Clay Loam', color: 'Reddish Brown (5YR 4/4)', ph: 7.8, om: '0.4%' },
+          { name: 'Btk/Caliche (24-38 in)', depth: '24-38"', texture: 'Calcareous Loam', color: 'Pinkish White (7.5YR 8/2)', ph: 8.2, om: '0.1%' }
+        ]
+      };
+    }
+
+    if (isSoutheast) {
+      return {
+        id: `southeast-ultisol-${lat.toFixed(2)}-${lng.toFixed(2)}`,
+        name: 'Thermic Ultisol Sandy Loam',
+        countySharePercent: 100,
+        primaryTexture: 'Sandy Loam over Red Clay',
+        sandPercent: 54, siltPercent: 24, clayPercent: 22,
+        bulkDensityGcm3: 1.42,
+        permeabilityRating: 'Moderate',
+        infiltrationRateInHr: 0.95,
+        availableWaterCapacityInIn: 0.15,
+        rootZoneDepthInches: 44,
+        permanentWiltingPointVwc: 7.0,
+        fieldCapacityVwc: 22.0,
+        salinitySensitivityThreshold: 2.0,
+        description: 'Deep, weathered subtropical soil with highly leached argillic subsoil. Responsive to balanced nutrient and moisture scheduling.',
+        horizons: [
+          { name: 'Ap (0-9 in)', depth: '0-9"', texture: 'Sandy Loam', color: 'Dark Grayish Brown (10YR 4/2)', ph: 5.8, om: '1.9%' },
+          { name: 'Bt1 (9-28 in)', depth: '9-28"', texture: 'Sandy Clay', color: 'Red (2.5YR 4/6)', ph: 5.2, om: '0.5%' },
+          { name: 'Bt2 (28-44 in)', depth: '28-44"+', texture: 'Clay', color: 'Reddish Yellow (5YR 6/8)', ph: 5.4, om: '0.2%' }
+        ]
+      };
+    }
+
+    // Universal Global Procedural Pedon
+    const hash = Math.abs(Math.sin(lat * 12.9898 + lng * 78.233)) * 100;
+    const sand = Math.round(25 + (hash % 45));
+    const clay = Math.round(15 + ((hash * 3) % 25));
+    const silt = 100 - sand - clay;
+    const infil = +(0.3 + (sand / 100) * 1.5).toFixed(2);
+    const awc = +(0.08 + (silt / 100) * 0.15).toFixed(2);
+    const bulk = +(1.25 + (sand / 100) * 0.25).toFixed(2);
+    const pwp = +(clay * 0.4 + silt * 0.1).toFixed(1);
+    const fc = +(pwp + awc * 100).toFixed(1);
+
+    return {
+      id: `geo-soil-${lat.toFixed(2)}-${lng.toFixed(2)}`,
+      name: `Geocoded Agricultural Soil (${sand}% Sand, ${silt}% Silt, ${clay}% Clay)`,
+      countySharePercent: 100,
+      primaryTexture: `${sand > 50 ? 'Sandy Loam' : clay > 35 ? 'Clay Loam' : 'Silt Loam'} Substrate`,
+      sandPercent: sand,
+      siltPercent: silt,
+      clayPercent: clay,
+      bulkDensityGcm3: bulk,
+      permeabilityRating: infil > 1.2 ? 'Rapid' : infil > 0.5 ? 'Moderate' : 'Slow',
+      infiltrationRateInHr: infil,
+      availableWaterCapacityInIn: awc,
+      rootZoneDepthInches: 48,
+      permanentWiltingPointVwc: pwp,
+      fieldCapacityVwc: fc,
+      salinitySensitivityThreshold: +(1.6 + (sand / 100) * 0.8).toFixed(1),
+      description: `Procedural USDA soil pedon computed for coordinates (${lat.toFixed(3)}°N, ${lng.toFixed(3)}°W). Infiltration capacity: ${infil}"/hr.`,
+      horizons: [
+        { name: 'Ap (0-8 in)', depth: '0-8"', texture: 'Surface Loam', color: 'Dark Brown (10YR 3/3)', ph: 6.6, om: '2.4%' },
+        { name: 'Bt1 (8-24 in)', depth: '8-24"', texture: 'Argillic Horizon', color: 'Reddish Brown (7.5YR 4/4)', ph: 6.3, om: '0.8%' },
+        { name: 'Bt2 (24-40 in)', depth: '24-40"', texture: 'Subsoil Complex', color: 'Strong Brown (7.5YR 5/6)', ph: 6.5, om: '0.3%' },
+        { name: 'C (40-48 in)', depth: '40-48"+', texture: 'Parent Mineral Substratum', color: 'Light Brown (10YR 6/4)', ph: 7.0, om: '0.1%' }
+      ]
+    };
+  },
+
+  /**
+   * Procedural Reverse Geocode for ANY Coordinates
+   */
+  approximateReverseGeocode(lat, lng) {
+    for (const loc of this.globalSampleLocations) {
+      if (Math.hypot(loc.lat - lat, loc.lng - lng) < 0.35) {
+        return {
+          name: loc.name,
+          area: loc.area,
+          city: loc.city,
+          state: loc.state,
+          country: loc.country
+        };
+      }
+    }
+
+    if (lat >= 34.9 && lat <= 35.5 && lng >= -97.6 && lng <= -97.1) {
+      return { name: 'Norman Research Parcel', area: 'Norman Uplands, OK', city: 'Norman', state: 'Oklahoma', country: 'USA' };
+    }
+
+    return {
+      name: `Field Parcel (${lat.toFixed(3)}°N, ${Math.abs(lng).toFixed(3)}°W)`,
+      area: `Geocoded Coordinates (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`,
+      city: 'Agricultural District',
+      state: 'Regional Basin',
+      country: 'USA'
+    };
+  },
+
+  /**
+   * Procedural Weather Model for ANY Coordinates
+   */
+  calculateLiveWeather(lat, lng) {
+    const now = new Date();
+    const hour = now.getHours();
+    const diurnal = Math.sin((hour - 9) * Math.PI / 12);
+    const latBase = 85 - Math.abs(lat - 25) * 0.9;
+    const tempF = +(latBase + diurnal * 12).toFixed(1);
+    const humidity = Math.min(95, Math.max(25, Math.round(65 - diurnal * 25)));
+    
+    const rainSeed = Math.abs(Math.sin(lat * 3.14 + lng * 1.59 + now.getDate()));
+    const willRain = rainSeed > 0.72;
+    const rainForecastInches = willRain ? +(0.35 + (rainSeed - 0.72) * 2.5).toFixed(2) : 0.0;
+    const et0 = +(0.15 + Math.max(0, (tempF - 55) * 0.0035)).toFixed(2);
+    const windMph = +(6 + Math.abs(Math.cos(lat + hour)) * 12).toFixed(1);
+
+    let condition = 'Clear & Sunny';
+    if (rainForecastInches > 0.5) condition = 'Heavy Rain / Thunderstorms Likely';
+    else if (rainForecastInches > 0.1) condition = 'Scattered Showers In Forecast';
+    else if (humidity > 70) condition = 'Humid & Overcast';
+    else if (windMph > 14) condition = 'Breezy & Dry';
+
+    const vwc = +(16 + (humidity * 0.1) + (rainForecastInches * 8)).toFixed(1);
+    const ec = +(1.6 + ((Math.abs(lng) % 10) * 0.08)).toFixed(2);
+
+    return {
+      tempF,
+      humidity,
+      precipitationInches: willRain && rainForecastInches > 0.4 ? 0.15 : 0.0,
+      rainForecastInches,
+      et0,
+      windMph,
+      condition,
+      suggestedMoistureVwc: Math.min(36, Math.max(12, vwc)),
+      suggestedSalinityEc: Math.min(3.8, Math.max(0.8, ec))
+    };
   }
 };

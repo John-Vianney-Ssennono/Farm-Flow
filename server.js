@@ -429,17 +429,224 @@ function generateUserQueriedRecommendation(query, location, soilUnit, weather, c
   const soil = soilUnit || CLEVELAND_SOILS['stephenville-harrah-newalla'];
   const w = weather || calculateLiveWeather(location ? location.lat : 35.22, location ? location.lng : -97.44);
   const locName = location ? (location.area || location.name || 'Your Field') : 'Your Field';
-  const acres = fieldAcres || 12.5;
+
+  // Numerical parameter extractions from query with fallbacks
+  const acreMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:acres?|ac\b)/i);
+  const acres = acreMatch ? parseFloat(acreMatch[1]) : (fieldAcres || 12.5);
+
+  const gpmMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:gpm|gal\/min|gallons? per minute)/i);
+  const pumpGpm = gpmMatch ? parseFloat(gpmMatch[1]) : 450;
+
+  const vwcMatch = q.match(/(\d+(?:\.\d+)?)\s*%(?:\s*vwc)?/i);
+  const activeVwc = vwcMatch ? parseFloat(vwcMatch[1]) : currentVwc;
+
+  const ecMatch = q.match(/(?:ec|salinity|salts?)\s*(?:of|is|at|level)?\s*(\d+(?:\.\d+)?)/i);
+  const activeEc = ecMatch ? parseFloat(ecMatch[1]) : salinityEc;
+
+  const rainMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:in\b|inch|inches|")/i);
+  const activeRain = rainMatch ? parseFloat(rainMatch[1]) : (w.rainForecastInches || 0.45);
 
   let rec = null;
   let replyText = '';
 
-  // 1. Rain / Forecast / Weather / Storm (Check first so rain queries get weather advice)
-  if (/\b(rain|raining|rains|storm|storms|forecast|precipitation|cloudy|weather)\b/i.test(q)) {
-    const rainVol = Math.round(w.rainForecastInches * 27154 * acres);
+  // ---------------------------------------------------------------------------
+  // TIER 1: INBUILT AGRONOMIC CALCULATION ENGINE
+  // ---------------------------------------------------------------------------
+
+  // C1. Moisture Deficit & Gallons to Field Capacity
+  if (/\b(how many gallons|gallons needed|deficit|reach field capacity|water to field capacity|volume of water|how much water to apply|water requirement|irrigation depth)\b/i.test(q)) {
+    const pwp = soil.permanentWiltingPointVwc;
+    const fc = soil.fieldCapacityVwc;
+    const deficitVwc = Math.max(0.2, +(fc - activeVwc).toFixed(1));
+    const depthInches = +((deficitVwc / 100) * soil.rootZoneDepthInches).toFixed(2);
+    const totalGallons = Math.round(depthInches * 27154 * acres);
+    const acreInches = +(depthInches * acres).toFixed(2);
+
     rec = {
-      id: `rec-user-rain-${Date.now()}`,
-      priority: w.rainForecastInches > 0.2 ? 'CRITICAL' : 'ADVISORY',
+      id: `rec-calc-deficit-${Date.now()}`,
+      priority: activeVwc < (pwp + 3) ? 'CRITICAL' : 'HIGH',
+      category: 'Precision Water Calculation',
+      title: `Calculated Irrigation: ${depthInches}" (~${totalGallons.toLocaleString()} gal)`,
+      summary: `Calculation for ${locName} (${acres} acres): Soil moisture is currently at ${activeVwc}% VWC against Field Capacity of ${fc}% VWC. Deficit is ${deficitVwc}% (${depthInches}" depth across ${soil.rootZoneDepthInches}" root profile).`,
+      scientificRationale: `USDA NRCS soil water balance formula: Required Depth (in) = [(Field Capacity - Current VWC) / 100] × Root Zone Depth. In ${soil.name}, Available Water Capacity is ${soil.availableWaterCapacityInIn}"/in.`,
+      suggestedAction: `Apply ${depthInches}" of water (${totalGallons.toLocaleString()} gallons total) across your ${acres} acres using cycle-and-soak pulses (< ${soil.infiltrationRateInHr}"/hr) to avoid surface runoff.`,
+      waterSavingsGallons: totalGallons,
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### 📐 Inbuilt Calculation: Soil Moisture Deficit & Volume\n* **Active Parcel:** **${locName}** (${acres} acres)\n* **Soil Series:** **${soil.name}** (${soil.primaryTexture})\n* **Current Moisture:** **${activeVwc}% VWC** (Permanent Wilting Point: ${pwp}%)\n* **Target Field Capacity:** **${fc}% VWC**\n* **Root Zone Depth:** **${soil.rootZoneDepthInches} inches**\n* **Moisture Deficit:** **${deficitVwc}% VWC** = **${depthInches} inches** of water depth\n* **Total Water Volume Needed:** **${totalGallons.toLocaleString()} gallons** (${acreInches} acre-inches)\n* **Application Recommendation:** Infiltration limit is **${soil.infiltrationRateInHr}"/hr**. Apply in calibrated pulsed sets to prevent runoff.`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // C2. Pump Run Time & Discharge Requirements
+  if (/\b(pump|gpm|hours?|run time|runtime|flow rate|how long to run|pumping time)\b/i.test(q)) {
+    const pwp = soil.permanentWiltingPointVwc;
+    const fc = soil.fieldCapacityVwc;
+    const deficitVwc = Math.max(0.2, +(fc - activeVwc).toFixed(1));
+    const depthInches = +((deficitVwc / 100) * soil.rootZoneDepthInches).toFixed(2);
+    const targetGallons = Math.round(depthInches * 27154 * acres);
+    
+    const totalMinutes = Math.round(targetGallons / Math.max(20, pumpGpm));
+    const totalHours = +(totalMinutes / 60).toFixed(1);
+    const splitCount = totalHours > 8 ? 3 : totalHours > 4 ? 2 : 1;
+    const hoursPerSplit = +(totalHours / splitCount).toFixed(1);
+
+    rec = {
+      id: `rec-calc-pump-${Date.now()}`,
+      priority: 'HIGH',
+      category: 'Pump Operation Calculation',
+      title: `Pump Schedule: ${totalHours} Hours at ${pumpGpm} GPM (~${targetGallons.toLocaleString()} gal)`,
+      summary: `Hydraulic pump runtime calculated for ${acres} acres: Delivering ${depthInches}" (${targetGallons.toLocaleString()} gal) with a ${pumpGpm} GPM pump requires ${totalHours} hours of total discharge.`,
+      scientificRationale: `Pump Runtime Formula: Time (hours) = Total Volume (gal) / [Flow Rate (GPM) × 60 min/hr]. Continuous delivery exceeding soil infiltration (${soil.infiltrationRateInHr}"/hr) creates runoff.`,
+      suggestedAction: `Split pumping into ${splitCount} operational pulses of ${hoursPerSplit} hours each during off-peak hours (02:00 - 06:30 AM) to optimize power tariffs and eliminate midday evaporation.`,
+      waterSavingsGallons: Math.round(targetGallons * 0.25),
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### ⏱️ Inbuilt Calculation: Well Pump Run Time\n* **Required Water Volume:** **${targetGallons.toLocaleString()} gallons** (${depthInches}" across ${acres} acres)\n* **Pump Discharge Flow Rate:** **${pumpGpm} GPM** (${(pumpGpm * 60).toLocaleString()} gal/hr)\n* **Total Run Time Required:** **${totalHours} hours** (${totalMinutes} minutes)\n* **Operational Splitting:** Divide into **${splitCount} sets of ${hoursPerSplit} hours**\n* **Energy Optimization:** Schedule pump actuation during pre-dawn off-peak electric utility windows (02:00 AM - 06:30 AM) to save ~40% on pumping electricity and minimize wind drift.`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // C3. Salt Leaching Requirement (LR) Formula
+  if (/\b(leach\w*|salin\w*|ec|salt|sodium|osmotic|desalination)\b/i.test(q)) {
+    const lrFraction = +(1.2 / (5 * activeEc - 1.2)).toFixed(3);
+    const flushDepth = +(Math.max(0.35, lrFraction * 2.5)).toFixed(2);
+    const flushGal = Math.round(flushDepth * 27154 * acres);
+    const osmoticBars = +(0.36 * activeEc).toFixed(2);
+    const reductionPercent = Math.min(65, Math.max(0, Math.round((activeEc - soil.salinitySensitivityThreshold) * 15)));
+
+    rec = {
+      id: `rec-calc-salinity-${Date.now()}`,
+      priority: activeEc > soil.salinitySensitivityThreshold ? 'CRITICAL' : 'HIGH',
+      category: 'Salinity Mitigation Calculation',
+      title: `Targeted Desalination Flush: ${flushDepth}" (~${flushGal.toLocaleString()} gal)`,
+      summary: `Soil pore EC is ${activeEc} mS/cm against sensitivity threshold of ${soil.salinitySensitivityThreshold} mS/cm. Salinity exerts ${osmoticBars} bars of osmotic suction, reducing crop water availability by ${reductionPercent}%.`,
+      scientificRationale: `USDA Agriculture Handbook 60 Leaching Requirement Formula: LR = ECw / [5·ECe - ECw]. In ${soil.primaryTexture}, flushing dissolved cations past the ${soil.rootZoneDepthInches}" active root horizon requires a ${lrFraction} leaching fraction.`,
+      suggestedAction: `Apply a calibrated freshwater pulse of ${flushDepth}" (${flushGal.toLocaleString()} gallons) across ${acres} acres during high-humidity evening hours.`,
+      waterSavingsGallons: flushGal,
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### 🧪 Inbuilt Calculation: USDA Salt Leaching Requirement (LR)\n* **Measured Soil Salinity:** **${activeEc} mS/cm** (Safe Limit: ${soil.salinitySensitivityThreshold} mS/cm)\n* **Osmotic Root Zone Tension:** **${osmoticBars} bars** (Matric Equivalent Suction)\n* **Transpirational Restriction:** **${reductionPercent}%** usable water uptake reduction\n* **USDA Leaching Fraction (LR):** **${(lrFraction * 100).toFixed(1)}%** of irrigation volume\n* **Recommended Leaching Pulse:** **${flushDepth} inches** of low-EC freshwater\n* **Total Volume Across ${acres} Acres:** **${flushGal.toLocaleString()} gallons**\n* **Agronomic Advice:** Apply during evening hours when soil capillary tension helps redistribute dissolved salts into deep subsoil layers.`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // C4. Rainfall Capture & Pumping Power Savings
+  if (/\b(rain|rainfall|storm|precipitation|saved|cost saving|savings)\b/i.test(q)) {
+    const rainVol = Math.round(activeRain * 27154 * acres);
+    const costSaved = +(rainVol * 0.00035).toFixed(2);
+
+    rec = {
+      id: `rec-calc-rain-${Date.now()}`,
+      priority: activeRain > 0.25 ? 'CRITICAL' : 'ADVISORY',
+      category: 'Precipitation Optimization',
+      title: `Capture Natural Rainfall: ${activeRain}" (~${rainVol.toLocaleString()} gal)`,
+      summary: `Forecast predicts ${activeRain}" of rainfall for ${locName}. Capturing this meteoric water delivers ${rainVol.toLocaleString()} gallons to your ${acres} acres, saving ~$${costSaved} in well electricity charges.`,
+      scientificRationale: `Natural rainfall contains zero mineral salts and delivers dissolved atmospheric nitrate. Irrigating before rainfall risks root hypoxia and fertilizer leaching.`,
+      suggestedAction: `Engage automated 36-hour well pump hold across all ${acres} acres. Allow natural storm infiltration to recharge soil moisture profile.`,
+      waterSavingsGallons: rainVol,
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### 🌧️ Inbuilt Calculation: Rainfall Water & Cost Savings\n* **Forecasted Precipitation:** **${activeRain} inches** (${w.condition})\n* **Natural Water Delivered:** **${rainVol.toLocaleString()} gallons** across ${acres} acres\n* **Acre-Inch Equivalent:** **${(activeRain * acres).toFixed(2)} acre-inches**\n* **Estimated Pumping Electricity Saved:** **$${costSaved}** (based on standard agricultural well lift tariffs)\n* **Soil Water Storage:** ${soil.name} can absorb up to **${soil.availableWaterCapacityInIn * soil.rootZoneDepthInches}"** of natural moisture before deep percolation occurs. Suspend automated well irrigation.`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // C5. Available Water Capacity (AWC) & Total Available Water (TAW)
+  if (/\b(taw|raw|awc|holding capacity|available water|profile capacity|storage capacity|reservoir)\b/i.test(q)) {
+    const tawInches = +(soil.availableWaterCapacityInIn * soil.rootZoneDepthInches).toFixed(2);
+    const rawInches = +(tawInches * 0.50).toFixed(2);
+    const tawGallons = Math.round(tawInches * 27154 * acres);
+    const rawGallons = Math.round(rawInches * 27154 * acres);
+
+    rec = {
+      id: `rec-calc-taw-${Date.now()}`,
+      priority: 'HIGH',
+      category: 'Soil Reservoir Capacity',
+      title: `Soil Water Capacity: ${tawInches}" TAW (~${tawGallons.toLocaleString()} gal)`,
+      summary: `In ${soil.name} across ${acres} acres: Total Available Water (TAW) is ${tawInches}" down to ${soil.rootZoneDepthInches}" depth. Readily Available Water (RAW before crop stress) is ${rawInches}" (${rawGallons.toLocaleString()} gal).`,
+      scientificRationale: `FAO-56 Irrigation Model: TAW = Available Water Capacity (in/in) × Root Zone Depth. RAW = TAW × Management Allowed Depletion (p = 0.50).`,
+      suggestedAction: `Trigger irrigation whenever root zone depletion exceeds ${rawInches}" (${rawGallons.toLocaleString()} gal) to prevent stomatal resistance from lowering yield.`,
+      waterSavingsGallons: rawGallons,
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### 📊 Inbuilt Calculation: Soil Available Water Capacity\n* **Soil Series:** **${soil.name}** (${soil.primaryTexture})\n* **Root Zone Profile Depth:** **${soil.rootZoneDepthInches} inches**\n* **Available Water Capacity (AWC):** **${soil.availableWaterCapacityInIn} in/in**\n* **Total Available Water (TAW):** **${tawInches} inches** (${tawGallons.toLocaleString()} gallons across ${acres} acres)\n* **Readily Available Water (RAW - 50% MAD):** **${rawInches} inches** (${rawGallons.toLocaleString()} gallons)\n* **Irrigation Trigger Threshold:** Re-water when root zone drops to **${(soil.permanentWiltingPointVwc + (soil.fieldCapacityVwc - soil.permanentWiltingPointVwc) * 0.5).toFixed(1)}% VWC**.`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // C6. Evapotranspiration (ET0 & ETc) Daily Loss
+  if (/\b(et0|etc|evapotranspiration|daily loss|crop water use|atmospheric demand)\b/i.test(q)) {
+    const kc = 1.05;
+    const etcInches = +(w.et0 * kc).toFixed(3);
+    const dailyLossGal = Math.round(etcInches * 27154 * acres);
+
+    rec = {
+      id: `rec-calc-et-${Date.now()}`,
+      priority: w.et0 > 0.22 ? 'CRITICAL' : 'HIGH',
+      category: 'Atmospheric Demand Calculation',
+      title: `Daily Evapotranspiration Loss: ${etcInches}"/day (~${dailyLossGal.toLocaleString()} gal/day)`,
+      summary: `At ${locName}, reference ET0 is ${w.et0}"/day at ${w.tempF}°F. Factoring crop coefficient (Kc: ${kc}), daily field consumptive water loss is ${etcInches}" (~${dailyLossGal.toLocaleString()} gal across ${acres} acres).`,
+      scientificRationale: `Penman-Monteith FAO-56 Equation: Crop Water Use (ETc) = Reference ET (ET0) × Crop Coefficient (Kc). Daytime evaporative fraction peaks between 11:00 AM and 03:30 PM.`,
+      suggestedAction: `Calibrate automated irrigation controllers to replenish ${dailyLossGal.toLocaleString()} gal every 48 hours exclusively during pre-dawn hours.`,
+      waterSavingsGallons: Math.round(dailyLossGal * 0.3),
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### ☀️ Inbuilt Calculation: Crop Evapotranspiration (ETc)\n* **Current Ambient Temperature:** **${w.tempF}°F** (Humidity: ${w.humidity}%)\n* **Reference Evapotranspiration (ET0):** **${w.et0} inches/day**\n* **Estimated Crop Factor (Kc):** **${kc}** (mid-season vegetative / grain stage)\n* **Daily Crop Water Demand (ETc):** **${etcInches} inches/day**\n* **Total Daily Parcel Water Loss:** **${dailyLossGal.toLocaleString()} gallons/day** across ${acres} acres\n* **Pre-Dawn Scheduling Gain:** Irrigating at 04:30 AM rather than midday prevents **${Math.round(dailyLossGal * 0.32).toLocaleString()} gallons** from direct evaporation!`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // C7. Recommendation Improvement & Optimization
+  if (/\b(improve|optimize|save more|lower cost|better recommendation|upgrade plan|fine tune)\b/i.test(q)) {
+    const pwp = soil.permanentWiltingPointVwc;
+    const fc = soil.fieldCapacityVwc;
+    const deficitVwc = Math.max(0.2, +(fc - activeVwc).toFixed(1));
+    const depthInches = +((deficitVwc / 100) * soil.rootZoneDepthInches).toFixed(2);
+    const targetGallons = Math.round(depthInches * 27154 * acres);
+    const optimizedGallons = Math.round(targetGallons * 0.72);
+    const costSaved = +(targetGallons * 0.00035 * 0.42).toFixed(2);
+
+    rec = {
+      id: `rec-calc-improve-${Date.now()}`,
+      priority: 'CRITICAL',
+      category: 'Precision Optimization Protocol',
+      title: `Optimized Micro-Pulsing Shield (Save ${Math.round(targetGallons * 0.28).toLocaleString()} gal & $${costSaved})`,
+      summary: `Upgraded protocol for ${locName}: Replacing single heavy set with 3 calibrated pre-dawn micro-pulses reduces evaporative losses by 28% and cuts electrical tariff costs by 42%.`,
+      scientificRationale: `USDA NRCS Hydraulic Pulsing: Delivering water in 20-minute pulses followed by 35-minute rest intervals maintains soil surface tension below saturation point, eliminating lateral runoff while utilizing low-cost night power tariffs.`,
+      suggestedAction: `Reconfigure automated valves for 3 cycles of 20 minutes at 03:30, 04:30, and 05:30 AM. Total delivery: ${optimizedGallons.toLocaleString()} gal.`,
+      waterSavingsGallons: Math.round(targetGallons * 0.28),
+      status: 'pending',
+      userGenerated: true,
+      isCalculated: true,
+      queryAsked: query
+    };
+
+    replyText = `### ⚡ Improved Precision Irrigation Protocol\nHere is an upgraded, high-efficiency recommendation tailored for **${locName}** (${acres} acres):\n1. **Tri-Pulse Pre-Dawn Timing (03:30 - 06:00 AM):** Shifts water delivery to lowest vapor pressure deficit (VPD) hours, preventing **${Math.round(targetGallons * 0.28).toLocaleString()} gallons** of direct daytime evaporation.\n2. **Cycle-and-Soak Rate Matching:** Respects soil infiltration limit (**${soil.infiltrationRateInHr}"/hr**), completely eliminating surface ponding and nutrient runoff.\n3. **Off-Peak Tariff Pumping:** Runs well pumps during non-peak electrical windows, saving an estimated **$${costSaved}** on this irrigation cycle alone.\n4. **Added Action Card:** I have formulated and pinned the **Optimized Micro-Pulsing Shield** card to your recommendation deck below!`;
+    return { recommendation: rec, reply: replyText };
+  }
+
+  // ---------------------------------------------------------------------------
+  // TIER 2: TOPICAL AGRONOMIC REASONING
+  // ---------------------------------------------------------------------------
       category: 'Weather Synchronization',
       title: `Precipitation Hold: Capture Natural Rainfall (${w.rainForecastInches}")`,
       summary: `In response to your query: Live forecasts for ${locName} predict ${w.rainForecastInches}" of rainfall within 24 hours. Pre-storm irrigation risks soil supersaturation, root hypoxia, and nutrient runoff.`,
