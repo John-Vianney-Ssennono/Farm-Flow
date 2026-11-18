@@ -161,28 +161,35 @@ body {
 }
 
 /* ==========================================================================
-   VIEWPORT WRAPPER & APPLE HARDWARE FRAMES
+   VIEWPORT WRAPPER & RESPONSIVE ADAPTIVE FRAME
    ========================================================================== */
-/* Centered container holding the simulated hardware screen */
+/* Centered container adapting smoothly to screen width */
 .app-viewport-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 6px 0 40px;
+  padding: 8px 16px 36px;
+  box-sizing: border-box;
 }
 
-/* iPhone 16 Pro hardware bezel frame with titanium perimeter & soft shadow */
-.device-frame-iphone {
-  width: 416px;
-  height: 870px;
+/* Responsive Unified App Frame (Auto-scales fluidly on mobile, tablet & desktop) */
+.device-frame-responsive,
+.device-frame-iphone,
+.device-frame-full {
+  width: 100%;
+  max-width: 820px;
+  height: min(900px, calc(100vh - 80px));
+  min-height: 640px;
   background: var(--ios-system-bg);
-  border: 12px solid #0f1c30;
-  border-radius: 56px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(56, 189, 248, 0.15);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  margin: 0 auto;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Full-width cross-platform mode (iPad / Android Tablet / Desktop) */
@@ -1567,23 +1574,71 @@ body {
   line-height: 1.4;
 }
 
-/* Mobile Screen Polish */
-@media (max-width: 480px) {
-  .device-frame-iphone {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    min-height: 100vh;
+/* Responsive Adaptation for Tablets and Medium Viewports */
+@media (max-width: 860px) {
+  .app-viewport-wrapper {
+    padding: 6px 12px 24px;
   }
+  .device-frame-responsive,
+  .device-frame-iphone,
+  .device-frame-full {
+    max-width: 100%;
+    height: min(880px, calc(100vh - 40px));
+  }
+}
+
+/* Full Native Edge-to-Edge Experience on Phones & Mobile Devices */
+@media (max-width: 640px) {
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden;
+    background: var(--ios-system-bg);
+  }
+
+  /* Hide desktop-only header on phone screens */
+  .platform-toolbar {
+    display: none !important;
+  }
+
   .app-viewport-wrapper {
     padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
   }
+
+  .device-frame-responsive,
+  .device-frame-iphone,
+  .device-frame-full {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+
+  .ios-status-bar {
+    height: 44px !important;
+    padding: 0 14px !important;
+  }
+
   .map-viewport-container {
-    height: 240px !important;
+    height: 250px !important;
   }
+
   .ios-scroll-content {
-    padding: 10px 12px 90px 12px !important;
+    padding: 10px 14px 92px 14px !important;
+  }
+
+  .ios-tab-bar {
+    padding-bottom: max(14px, env(safe-area-inset-bottom)) !important;
   }
 }

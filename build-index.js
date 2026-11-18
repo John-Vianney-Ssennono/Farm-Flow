@@ -41,29 +41,6 @@ const html = `<!DOCTYPE html>
 </head>
 <body>
 
-  <!-- GLOBAL PLATFORM HEADER WITH APP MODE SWITCHER -->
-  <header style="width: 100%; max-width: 1200px; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(56, 189, 248, 0.2); background: rgba(3, 7, 18, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <span style="font-size: 20px;">💧</span>
-      <div>
-        <strong style="color: #fff; font-size: 16px; letter-spacing: -0.3px;">Farm-Flow</strong>
-        <span style="font-size: 11px; background: rgba(14, 165, 233, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 12px; font-weight: 700; margin-left: 6px; border: 1px solid rgba(56, 189, 248, 0.3);">
-          WATER QUANTITY OPTIMIZATION
-        </span>
-      </div>
-    </div>
-    
-    <!-- Mode Switcher Navigation Links -->
-    <nav style="display: flex; gap: 10px;">
-      <a href="index.html" id="nav-btn-swift" style="text-decoration: none; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1d4ed8, #0284c7); border: 1px solid #38bdf8; padding: 6px 14px; border-radius: 8px; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4); display: flex; align-items: center; gap: 6px;">
-        📱 React Swift App
-      </a>
-      <a href="automation-builder.html" id="nav-btn-nodered" style="text-decoration: none; font-size: 12px; font-weight: 600; color: #93c5fd; background: rgba(14, 30, 56, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px 14px; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
-        ⚡ Visual Node-RED Engine
-      </a>
-    </nav>
-  </header>
-
   <!-- REACT MOUNTING ROOT -->
   <main id="react-farm-flow-root" style="width: 100%;"></main>
 

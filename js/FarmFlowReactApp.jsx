@@ -17,9 +17,6 @@ function FarmFlowReactApp() {
   // 1. APPLICATION STATE
   // ----------------------------------------------------------------------------
 
-  // Device presentation mode: 'iphone' (bezel) or 'fullscreen' (iPad / Desktop)
-  const [deviceMode, setDeviceMode] = useState('iphone');
-
   // Active bottom navigation tab: 'map', 'water', 'ai', 'pedon', 'log'
   const [activeTab, setActiveTab] = useState('map');
 
@@ -754,27 +751,11 @@ function FarmFlowReactApp() {
             </div>
           </div>
         </div>
-
-        {/* View Switcher Controls */}
-        <div className="platform-modes">
-          <button
-            className={`mode-toggle-btn ${deviceMode === 'iphone' ? 'active' : ''}`}
-            onClick={() => setDeviceMode('iphone')}
-          >
-            📱 Phone
-          </button>
-          <button
-            className={`mode-toggle-btn ${deviceMode === 'fullscreen' ? 'active' : ''}`}
-            onClick={() => setDeviceMode('fullscreen')}
-          >
-            💻 Desktop
-          </button>
-        </div>
       </header>
 
-      {/* ==================== MAIN VIEWPORT FRAME ==================== */}
+      {/* ==================== MAIN VIEWPORT FRAME (FLUID RESPONSIVE) ==================== */}
       <div className="app-viewport-wrapper">
-        <div className={deviceMode === 'iphone' ? 'device-frame-iphone' : 'device-frame-full'}>
+        <div className="device-frame-responsive">
           
           {/* iOS Status Bar */}
           <div className="ios-status-bar">
