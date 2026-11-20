@@ -1623,15 +1623,9 @@ body {
     margin: 0 !important;
   }
 
-  .ios-status-bar {
-    display: flex !important;
-    height: 44px !important;
-    padding: 0 16px !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
-  .dynamic-island {
-    display: flex !important;
+  /* Phone native software status bar sync: respects native iOS / Android status bar & notch */
+  .device-frame-responsive {
+    padding-top: env(safe-area-inset-top, 0px) !important;
   }
 
   .map-viewport-container {

@@ -801,13 +801,8 @@ function FarmFlowReactApp() {
           </div>
         </div>
 
-        {/* Desktop Telemetry Header: Synchronized Local Time & Live Temperature (Laptops don't have dynamic island) */}
+        {/* Desktop Telemetry Header: Live Temperature & GPS Sync */}
         <div className="platform-desktop-telemetry" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '5px 11px', borderRadius: '12px', fontSize: '12px', color: '#e0f2fe' }} title={`Synchronized local time for ${selectedLocation.area}`}>
-            <span>🕒</span>
-            <span style={{ fontWeight: 600 }}>{locationTimeStr}</span>
-          </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '5px 11px', borderRadius: '12px', fontSize: '12px', color: '#e0f2fe' }} title="Current Live Temperature">
             <span>🌡️</span>
             <span style={{ fontWeight: 600 }}>{liveWeather.tempF}°F</span>
@@ -831,7 +826,7 @@ function FarmFlowReactApp() {
               cursor: 'pointer'
             }}
           >
-            <span className={`island-pulse-dot ${isDetectingLocation ? 'pulse-spin' : ''}`} style={{ width: '6px', height: '6px', background: '#38bdf8', borderRadius: '50%', display: 'inline-block' }}></span>
+            <span style={{ width: '6px', height: '6px', background: '#38bdf8', borderRadius: '50%', display: 'inline-block' }}></span>
             <span>{isDetectingLocation ? 'Locating...' : 'Sync GPS'}</span>
           </button>
         </div>
@@ -840,17 +835,6 @@ function FarmFlowReactApp() {
       {/* ==================== MAIN VIEWPORT FRAME (FLUID RESPONSIVE) ==================== */}
       <div className="app-viewport-wrapper">
         <div className="device-frame-responsive">
-          
-          {/* iOS Status Bar (Visible only on phone version; hidden on desktop/laptop) */}
-          <div className="ios-status-bar">
-            <span style={{ fontWeight: 600, fontSize: '13px', letterSpacing: '-0.2px' }}>{locationTimeStr}</span>
-            <div className="dynamic-island" onClick={handleUseCurrentLocation} title="Click to refresh current location" style={{ cursor: 'pointer' }}>
-              <span className={`island-pulse-dot ${isDetectingLocation ? 'pulse-spin' : ''}`}></span>
-              <span>{isDetectingLocation ? 'Locating...' : `${liveWeather.tempF}°F • Live Hydrology`}</span>
-            </div>
-            {/* Removed 5G, wifi icon, and 100% per user request; balanced spacer keeps dynamic island centered on phones */}
-            <div style={{ width: '54px' }}></div>
-          </div>
 
           {/* ==================== UNIFIED SEARCH BAR WITH AUTOCOMPLETE ==================== */}
           <div style={{ padding: '8px 16px 4px 16px', background: 'rgba(8, 17, 32, 0.95)' }}>
@@ -933,9 +917,6 @@ function FarmFlowReactApp() {
                 </div>
               </div>
               <div className="status-pill-telemetry">
-                <span className="telemetry-chip" title="Synchronized Location Time">
-                  🕒 {locationTimeStr}
-                </span>
                 <span className="telemetry-chip" title="Current Temperature & Condition">
                   ☀️ {liveWeather.tempF}°F
                 </span>
