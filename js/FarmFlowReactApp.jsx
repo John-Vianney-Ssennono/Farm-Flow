@@ -9,13 +9,57 @@
  * ==============================================================================
  */
 
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useMemo } = React;
+
+/**
+ * Helper: Calculate synchronized local civil time for any coordinates worldwide
+ */
+function getLocationLocalTime(coords, date = new Date()) {
+  if (!coords || !Array.isArray(coords) || coords.length < 2) {
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  const [lat, lng] = coords;
+
+  // If in US bounds, use standard US timezones with Daylight Saving Time handling via Intl
+  if (lat >= 24 && lat <= 50 && lng >= -125 && lng <= -65) {
+    let tz = 'America/Chicago';
+    if (lng < -114.5) tz = 'America/Los_Angeles';
+    else if (lng < -102.0) tz = 'America/Denver';
+    else if (lng < -85.5) tz = 'America/Chicago';
+    else tz = 'America/New_York';
+    try {
+      return date.toLocaleTimeString([], { timeZone: tz, hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  // Worldwide / solar standard time estimation based on longitude (15 degrees per timezone hour)
+  try {
+    const utcMs = date.getTime() + (date.getTimezoneOffset() * 60000);
+    const targetOffsetHours = Math.round(lng / 15);
+    const targetDate = new Date(utcMs + (3600000 * targetOffsetHours));
+    return targetDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch (err) {
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+}
 
 function FarmFlowReactApp() {
 
   // ----------------------------------------------------------------------------
   // 1. APPLICATION STATE
   // ----------------------------------------------------------------------------
+
+  // Live synchronized location time (refreshed periodically)
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Active bottom navigation tab: 'map', 'water', 'ai', 'pedon', 'log'
   const [activeTab, setActiveTab] = useState('map');
@@ -54,6 +98,11 @@ function FarmFlowReactApp() {
     lng: -97.4395,
     soilUnitKey: 'stephenville-harrah-newalla'
   });
+
+  // Synchronized Location Time based on selected parcel coordinates & real-time clock
+  const locationTimeStr = useMemo(() => {
+    return getLocationLocalTime([selectedLocation.lat, selectedLocation.lng], currentTime);
+  }, [selectedLocation.lat, selectedLocation.lng, currentTime]);
 
   // Live Meteorological Telemetry
   const [liveWeather, setLiveWeather] = useState({
@@ -731,8 +780,8 @@ function FarmFlowReactApp() {
         </div>
       )}
 
-      {/* ==================== CLEAN TOP NAVIGATION BAR ==================== */}
-      <header className="platform-toolbar" style={{ borderBottom: '1px solid rgba(56, 189, 248, 0.25)', padding: '10px 20px' }}>
+      {/* ==================== CLEAN TOP NAVIGATION BAR (DESKTOP / LAPTOP) ==================== */}
+      <header className="platform-toolbar" style={{ borderBottom: '1px solid rgba(56, 189, 248, 0.25)', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="platform-title" style={{ gap: '10px' }}>
           <div className="apple-logo-badge" style={{ width: '32px', height: '32px' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -751,26 +800,56 @@ function FarmFlowReactApp() {
             </div>
           </div>
         </div>
+
+        {/* Desktop Telemetry Header: Synchronized Local Time & Live Temperature (Laptops don't have dynamic island) */}
+        <div className="platform-desktop-telemetry" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '5px 11px', borderRadius: '12px', fontSize: '12px', color: '#e0f2fe' }} title={`Synchronized local time for ${selectedLocation.area}`}>
+            <span>🕒</span>
+            <span style={{ fontWeight: 600 }}>{locationTimeStr}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '5px 11px', borderRadius: '12px', fontSize: '12px', color: '#e0f2fe' }} title="Current Live Temperature">
+            <span>🌡️</span>
+            <span style={{ fontWeight: 600 }}>{liveWeather.tempF}°F</span>
+            <span style={{ color: '#93c5fd', fontSize: '11px' }}>({liveWeather.condition || 'Clear'})</span>
+          </div>
+
+          <button
+            onClick={handleUseCurrentLocation}
+            title="Detect &amp; sync current GPS location"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, rgba(29, 78, 216, 0.45), rgba(2, 132, 199, 0.45))',
+              border: '1px solid #38bdf8',
+              color: '#fff',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '5px 12px',
+              borderRadius: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            <span className={`island-pulse-dot ${isDetectingLocation ? 'pulse-spin' : ''}`} style={{ width: '6px', height: '6px', background: '#38bdf8', borderRadius: '50%', display: 'inline-block' }}></span>
+            <span>{isDetectingLocation ? 'Locating...' : 'Sync GPS'}</span>
+          </button>
+        </div>
       </header>
 
       {/* ==================== MAIN VIEWPORT FRAME (FLUID RESPONSIVE) ==================== */}
       <div className="app-viewport-wrapper">
         <div className="device-frame-responsive">
           
-          {/* iOS Status Bar */}
+          {/* iOS Status Bar (Visible only on phone version; hidden on desktop/laptop) */}
           <div className="ios-status-bar">
-            <span>9:41</span>
+            <span style={{ fontWeight: 600, fontSize: '13px', letterSpacing: '-0.2px' }}>{locationTimeStr}</span>
             <div className="dynamic-island" onClick={handleUseCurrentLocation} title="Click to refresh current location" style={{ cursor: 'pointer' }}>
               <span className={`island-pulse-dot ${isDetectingLocation ? 'pulse-spin' : ''}`}></span>
               <span>{isDetectingLocation ? 'Locating...' : `${liveWeather.tempF}°F • Live Hydrology`}</span>
             </div>
-            <div className="status-right-icons">
-              <span>5G</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
-              </svg>
-              <span>100%</span>
-            </div>
+            {/* Removed 5G, wifi icon, and 100% per user request; balanced spacer keeps dynamic island centered on phones */}
+            <div style={{ width: '54px' }}></div>
           </div>
 
           {/* ==================== UNIFIED SEARCH BAR WITH AUTOCOMPLETE ==================== */}
@@ -854,6 +933,9 @@ function FarmFlowReactApp() {
                 </div>
               </div>
               <div className="status-pill-telemetry">
+                <span className="telemetry-chip" title="Synchronized Location Time">
+                  🕒 {locationTimeStr}
+                </span>
                 <span className="telemetry-chip" title="Current Temperature & Condition">
                   ☀️ {liveWeather.tempF}°F
                 </span>

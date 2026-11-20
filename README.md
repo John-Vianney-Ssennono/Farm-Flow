@@ -1,7 +1,8 @@
 # 🌾 Farm-Flow — Water Quantity Optimization & USDA Soil Science
 > **Cross-Platform React Application in Apple Swift (iOS HIG) Design**  
 > *Theme: Hydrology Blue Spectrum (Deep Abyssal Blue, Oceanic Navy, Cobalt, Sky Blue, and Aquamarine)*  
-> *Sample Study Area: Cleveland County, Oklahoma, USA (Norman, Lake Thunderbird, Noble, Moore, Lexington)*
+> *Sample Study Area: Cleveland County, Oklahoma, USA (Norman, Lake Thunderbird, Noble, Moore, Lexington)*  
+> 🌐 **Live Hosted Website (GitHub Pages)**: [https://john-vianney-ssennono.github.io/Farm-Flow/](https://john-vianney-ssennono.github.io/Farm-Flow/)
 
 ---
 
@@ -81,7 +82,12 @@ Farm-Flow computes the exact additional gallonage required to flush toxic salts 
 
 ## 🚀 How to Run with the Live Backend Server
 
-### Quick Start (Recommended)
+### 🌐 Live Production Deployment (GitHub Pages)
+No local installation required — access the live deployed application in any mobile or desktop web browser:
+* **Live Hosted Web App**: [https://john-vianney-ssennono.github.io/Farm-Flow/](https://john-vianney-ssennono.github.io/Farm-Flow/)
+* **Visual Node-RED Automation Engine**: [https://john-vianney-ssennono.github.io/Farm-Flow/automation-builder.html](https://john-vianney-ssennono.github.io/Farm-Flow/automation-builder.html)
+
+### Local Quick Start (Optional)
 
 1. Open a terminal in the project directory:
    ```bash
@@ -91,7 +97,7 @@ Farm-Flow computes the exact additional gallonage required to flush toxic salts 
    *(Or simply `node server.js` — zero external npm dependencies required!)*
 
 2. Open your web browser at:
-   * **React Swift Mobile App (Primary Interface)**: [http://localhost:3000](http://localhost:3000)
+   * **React Swift App (Primary Interface)**: [http://localhost:3000](http://localhost:3000)
    * **Visual Node-RED Automation Engine**: [http://localhost:3000/automation-builder.html](http://localhost:3000/automation-builder.html)
    * **Live Telemetry REST API**: [http://localhost:3000/api/telemetry](http://localhost:3000/api/telemetry)
    * **Health Check**: [http://localhost:3000/api/health](http://localhost:3000/api/health)
