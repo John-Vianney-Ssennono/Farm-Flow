@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Document character encoding -->
   <meta charset="UTF-8">
+  <!-- Viewport settings: edge-to-edge scaling on mobile devices without unwanted pinch-zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Application Title -->
   <title>Farm-Flow — Water Quantity Optimization &amp; USDA Soil Science</title>
+  <!-- Search engine and social metadata description -->
   <meta name="description" content="Cross-platform React mobile application in Apple Swift HIG design for farmers. USDA soil structure analysis, salinity-adjusted water quantity, live current location detection, and AgriSense AI Agent recommendations.">
+  <!-- Apple iOS web app capability: standalone fullscreen display -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- Apple iOS status bar appearance -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Apple iOS homescreen bookmark title -->
   <meta name="apple-mobile-web-app-title" content="Farm-Flow">
 
   <!-- Leaflet GIS Map CSS -->
@@ -18,7 +25,7 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <!-- ReactDOM 18 Production UMD -->
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel Standalone -->
+  <!-- Babel Standalone: Compiles in-browser JSX seamlessly under file:// and http:// protocols -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- Apple Swift / iOS Human Interface Guidelines Stylesheet (Hydrology Blue Palette) -->
@@ -33,7 +40,9 @@
   <main id="react-farm-flow-root" style="width: 100%;"></main>
 
   <!-- APPLICATION DATA & ENGINE SCRIPTS -->
+  <!-- USDA Cleveland County Soil Survey dataset & 100+ location geocoding index -->
   <script src="js/cleveland-usda-data.js"></script>
+  <!-- AgriSense AI Agent reasoning engine & mathematical irrigation calculators -->
   <script src="js/ai-agent-engine.js"></script>
 
   <!-- INLINE BABEL REACT SWIFT APP (Executes seamlessly on file:// AND http:// localhost) -->
